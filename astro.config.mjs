@@ -4,13 +4,17 @@ import tailwindcss from '@tailwindcss/vite';
 import preact from '@astrojs/preact';
 import sitemap from '@astrojs/sitemap';
 
+import cloudflare from '@astrojs/cloudflare';
+
 // https://astro.build/config
 export default defineConfig({
   site: 'https://imagesize.org',
+
   redirects: {
     '/crop': '/crop-and-resize',
     '/resize': '/crop-and-resize',
   },
+
   integrations: [
     preact({ compat: true }),
     sitemap({
@@ -24,7 +28,10 @@ export default defineConfig({
       },
     }),
   ],
+
   vite: {
     plugins: [tailwindcss()],
   },
+
+  adapter: cloudflare(),
 });
