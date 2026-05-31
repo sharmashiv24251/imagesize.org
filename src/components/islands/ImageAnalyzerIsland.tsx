@@ -4,9 +4,8 @@ import {
   decimalRatio,
   orientation,
   nearestCommonRatios,
-  formatRatio,
-  type Orientation,
 } from '../../lib/ratio';
+import { categoryLabels, platformFormats, type PlatformCategory } from '../../lib/platforms';
 
 interface ImageInfo {
   src: string;
@@ -17,30 +16,7 @@ interface ImageInfo {
   fileType: string;
 }
 
-interface PlatformFormat {
-  platform: string;
-  name: string;
-  w: number;
-  h: number;
-  ratio: string;
-}
-
-const platformFormats: PlatformFormat[] = [
-  { platform: 'YouTube', name: 'Thumbnail', w: 1280, h: 720, ratio: '16:9' },
-  { platform: 'YouTube', name: 'Banner', w: 2560, h: 1440, ratio: '16:9' },
-  { platform: 'Instagram', name: 'Post (Square)', w: 1080, h: 1080, ratio: '1:1' },
-  { platform: 'Instagram', name: 'Portrait', w: 1080, h: 1350, ratio: '4:5' },
-  { platform: 'Instagram', name: 'Story/Reel', w: 1080, h: 1920, ratio: '9:16' },
-  { platform: 'Facebook', name: 'Post', w: 1200, h: 630, ratio: '1.91:1' },
-  { platform: 'Facebook', name: 'Cover', w: 820, h: 312, ratio: '2.63:1' },
-  { platform: 'X (Twitter)', name: 'Post Image', w: 1600, h: 900, ratio: '16:9' },
-  { platform: 'X (Twitter)', name: 'Header', w: 1500, h: 500, ratio: '3:1' },
-  { platform: 'LinkedIn', name: 'Post', w: 1200, h: 627, ratio: '1.91:1' },
-  { platform: 'LinkedIn', name: 'Banner', w: 1584, h: 396, ratio: '4:1' },
-  { platform: 'TikTok', name: 'Video', w: 1080, h: 1920, ratio: '9:16' },
-  { platform: 'Pinterest', name: 'Pin', w: 1000, h: 1500, ratio: '2:3' },
-  { platform: 'Twitch', name: 'Banner', w: 1200, h: 480, ratio: '5:2' },
-];
+type CategoryFilter = 'all' | PlatformCategory;
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -62,14 +38,13 @@ function checkCompatibility(imgW: number, imgH: number, targetW: number, targetH
 
 function CompatBadge({ status }: { status: Compatibility }) {
   const config = {
-    fits: { icon: '✅', text: 'Fits', cls: 'text-success bg-success/10 border-success/20' },
-    crop: { icon: '🟡', text: 'Needs crop', cls: 'text-warning bg-warning/10 border-warning/20' },
-    wrong: { icon: '❌', text: 'Wrong shape', cls: 'text-danger bg-danger/10 border-danger/20' },
+    fits: { text: 'Fits', cls: 'text-success bg-success/10 border-success/20' },
+    crop: { text: 'Needs crop', cls: 'text-warning bg-warning/10 border-warning/20' },
+    wrong: { text: 'Wrong shape', cls: 'text-danger bg-danger/10 border-danger/20' },
   };
   const c = config[status];
   return (
     <span class={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border ${c.cls}`}>
-      <span>{c.icon}</span>
       <span>{c.text}</span>
     </span>
   );
@@ -104,6 +79,8 @@ function CopyBtn({ value }: { value: string }) {
 export default function ImageAnalyzerIsland() {
   const [image, setImage] = useState<ImageInfo | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [query, setQuery] = useState('');
+  const [category, setCategory] = useState<CategoryFilter>('all');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const analyzeImage = useCallback((file: File) => {
@@ -194,6 +171,15 @@ export default function ImageAnalyzerIsland() {
   const decimal = decimalRatio(image.width, image.height);
   const orient = orientation(image.width, image.height);
   const nearest = nearestCommonRatios(image.width, image.height, 3);
+  const filteredFormats = platformFormats.filter((format) => {
+    const matchesCategory = category === 'all' || format.category === category;
+    const q = query.trim().toLowerCase();
+    const matchesQuery = !q || [format.platform, format.name, format.ratio, `${format.w}`, `${format.h}`].some((value) =>
+      value.toLowerCase().includes(q)
+    );
+    return matchesCategory && matchesQuery;
+  });
+  const categories: CategoryFilter[] = ['all', 'social', 'video', 'professional', 'print', 'cinema', 'display-ads'];
 
   return (
     <div class="w-full max-w-5xl mx-auto space-y-6">
@@ -278,8 +264,32 @@ export default function ImageAnalyzerIsland() {
       {/* Platform Compatibility Grid */}
       <div class="bg-surface rounded-xl border border-border-dark/50 overflow-hidden">
         <div class="p-4 border-b border-border-dark/30">
-          <h3 class="text-sm font-semibold text-text-primary">Platform Compatibility</h3>
-          <p class="text-xs text-text-muted mt-1">How your image fits each platform's recommended dimensions</p>
+          <div class="flex flex-col gap-3">
+            <div>
+              <h3 class="text-sm font-semibold text-text-primary">Platform Compatibility</h3>
+              <p class="text-xs text-text-muted mt-1">
+                {filteredFormats.length} of {platformFormats.length} formats shown. Print rows include DPI-aware targets.
+              </p>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-2">
+              <input
+                type="search"
+                value={query}
+                onInput={(e) => setQuery((e.target as HTMLInputElement).value)}
+                placeholder="Search platform, format, ratio, dimensions..."
+                class="flex-1 px-3 py-2 bg-surface-2 border border-border-dark rounded-lg text-sm text-text-primary placeholder:text-text-muted/60 focus:border-teal-500 outline-none"
+              />
+              <select
+                value={category}
+                onChange={(e) => setCategory((e.target as HTMLSelectElement).value as CategoryFilter)}
+                class="px-3 py-2 bg-surface-2 border border-border-dark rounded-lg text-sm text-text-primary focus:border-teal-500 outline-none"
+              >
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>{cat === 'all' ? 'All categories' : categoryLabels[cat as PlatformCategory]}</option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
@@ -294,12 +304,20 @@ export default function ImageAnalyzerIsland() {
               </tr>
             </thead>
             <tbody class="divide-y divide-border-dark/30">
-              {platformFormats.map((pf) => {
+              {filteredFormats.map((pf) => {
                 const status = checkCompatibility(image.width, image.height, pf.w, pf.h);
                 return (
                   <tr key={`${pf.platform}-${pf.name}`} class="hover:bg-surface-2/30 transition-colors">
                     <td class="px-4 py-3 text-text-primary font-medium">{pf.platform}</td>
-                    <td class="px-4 py-3 text-text-muted">{pf.name}</td>
+                    <td class="px-4 py-3 text-text-muted">
+                      <div>{pf.name}</div>
+                      {(pf.safeZone || pf.dpi) && (
+                        <div class="mt-1 flex flex-wrap gap-1">
+                          {pf.safeZone && <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/20">Safe zone</span>}
+                          {pf.dpi && <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-warning/10 text-warning border border-warning/20">{pf.dpi} DPI</span>}
+                        </div>
+                      )}
+                    </td>
                     <td class="px-4 py-3 font-mono tabular-nums text-text-muted text-xs">{pf.w}×{pf.h}</td>
                     <td class="px-4 py-3 font-mono tabular-nums text-text-muted text-xs">{pf.ratio}</td>
                     <td class="px-4 py-3"><CompatBadge status={status} /></td>
@@ -307,9 +325,17 @@ export default function ImageAnalyzerIsland() {
                       {status !== 'fits' && (
                         <a
                           href={`/crop?w=${image.width}&h=${image.height}&tw=${pf.w}&th=${pf.h}`}
+                          onClick={() => {
+                            sessionStorage.setItem('aspect-ratio-pending-image', JSON.stringify({
+                              src: image.src,
+                              fileName: image.fileName,
+                              width: image.width,
+                              height: image.height,
+                            }));
+                          }}
                           class="text-xs text-teal-400 hover:text-teal-300 transition-colors"
                         >
-                          Fix →
+                          Crop to fix →
                         </a>
                       )}
                     </td>

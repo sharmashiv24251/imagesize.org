@@ -6,6 +6,8 @@ import {
   nearestCommonRatios,
   formatRatio,
   resizeToDimension,
+  convertDimensionUnit,
+  type DimensionUnit,
   type NearestMatch,
   type Orientation,
 } from '../../lib/ratio';
@@ -27,6 +29,12 @@ const presets: PresetRatio[] = [
   { label: '5:4', w: 1280, h: 1024 },
   { label: '16:10', w: 1920, h: 1200 },
   { label: '32:9', w: 3840, h: 1080 },
+  { label: '1.85:1', w: 1850, h: 1000 },
+  { label: '2.39:1', w: 2390, h: 1000 },
+  { label: 'A4', w: 2480, h: 3508 },
+  { label: 'Letter', w: 2550, h: 3300 },
+  { label: '728×90', w: 728, h: 90 },
+  { label: '300×600', w: 300, h: 600 },
 ];
 
 type Mode = 'wh-to-ratio' | 'ratio-to-dim';
@@ -93,7 +101,13 @@ function RatioPreview({ w, h }: { w: number; h: number }) {
     <div class="flex flex-col items-center gap-3">
       <div class="relative flex items-center justify-center" style={{ width: `${maxSize}px`, height: `${maxSize}px` }}>
         <div
-          class="border-2 border-teal-500/60 bg-gradient-to-br from-teal-500/10 to-teal-600/5 rounded-sm transition-all duration-300 ease-out flex items-center justify-center"
+          class={`absolute rounded-lg border border-text-muted/10 bg-surface-2/35 ${
+            w / Math.max(h, 1) < 0.7 ? 'w-[70px] h-[140px]' : w / Math.max(h, 1) > 3 ? 'w-[150px] h-[48px]' : 'w-[150px] h-[92px]'
+          }`}
+          title={w / Math.max(h, 1) < 0.7 ? 'Phone silhouette' : w / Math.max(h, 1) > 3 ? 'Billboard silhouette' : 'Display silhouette'}
+        />
+        <div
+          class="relative border-2 border-teal-500/60 bg-gradient-to-br from-teal-500/10 to-teal-600/5 rounded-sm transition-all duration-300 ease-out flex items-center justify-center"
           style={{
             width: `${displayW}px`,
             height: `${displayH}px`,
@@ -144,6 +158,11 @@ export default function CalculatorIsland() {
   const [ratioW, setRatioW] = useState(16);
   const [ratioH, setRatioH] = useState(9);
   const [lockDim, setLockDim] = useState<'width' | 'height'>('width');
+  const [dpi, setDpi] = useState(300);
+  const [unitValue, setUnitValue] = useState(1920);
+  const [fromUnit, setFromUnit] = useState<DimensionUnit>('px');
+  const [toUnit, setToUnit] = useState<DimensionUnit>('in');
+  const [history, setHistory] = useState<Array<{ w: number; h: number; ratio: string }>>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   // Read initial values from URL params
@@ -153,7 +172,44 @@ export default function CalculatorIsland() {
     const h = params.get('h');
     if (w) setWidth(parseInt(w, 10));
     if (h) setHeight(parseInt(h, 10));
+    try {
+      const saved = JSON.parse(localStorage.getItem('aspect-ratio-history') || '[]');
+      if (Array.isArray(saved)) setHistory(saved.slice(0, 6));
+    } catch {
+      setHistory([]);
+    }
   }, []);
+
+  useEffect(() => {
+    if (width <= 0 || height <= 0) return;
+    const params = new URLSearchParams(window.location.search);
+    params.set('w', `${width}`);
+    params.set('h', `${height}`);
+    window.history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`);
+  }, [width, height]);
+
+  useEffect(() => {
+    if (width <= 0 || height <= 0) return;
+    const ratio = formatRatio(width, height);
+    const next = [{ w: width, h: height, ratio }, ...history.filter((item) => item.w !== width || item.h !== height)].slice(0, 6);
+    const timer = setTimeout(() => {
+      setHistory(next);
+      localStorage.setItem('aspect-ratio-history', JSON.stringify(next));
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [width, height]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'e') {
+        event.preventDefault();
+        const ratio = width > 0 && height > 0 ? formatRatio(width, height) : '—';
+        navigator.clipboard?.writeText(`${width}x${height} = ${ratio} (${decimalRatio(width, height).toFixed(4)})`);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [width, height]);
 
   const handleWidthChange = useCallback((e: Event) => {
     const raw = (e.target as HTMLInputElement).value;
@@ -197,6 +253,7 @@ export default function CalculatorIsland() {
   const decimal = decimalRatio(width, height);
   const orient: Orientation = orientation(width, height);
   const nearest = nearestCommonRatios(width, height, 5);
+  const converted = convertDimensionUnit(unitValue, fromUnit, toUnit, dpi);
 
   return (
     <div class="w-full max-w-4xl mx-auto">
@@ -343,6 +400,59 @@ export default function CalculatorIsland() {
             <ResultStat label="Pixels" value={width > 0 && height > 0 ? `${(width * height).toLocaleString()}` : '—'} />
           </div>
 
+          <div class="p-4 bg-surface rounded-xl border border-border-dark/50">
+            <div class="flex items-center justify-between gap-3 mb-3">
+              <h3 class="text-xs text-text-muted uppercase tracking-wider">Unit Conversion</h3>
+              <label class="flex items-center gap-2 text-xs text-text-muted">
+                DPI
+                <input
+                  type="number"
+                  value={dpi}
+                  min="1"
+                  onInput={(e) => setDpi(Math.max(1, parseInt((e.target as HTMLInputElement).value, 10) || 1))}
+                  class="w-20 px-2 py-1.5 bg-surface-2 border border-border-dark rounded-md text-text-primary font-mono text-sm text-center focus:border-teal-500 outline-none"
+                />
+              </label>
+            </div>
+            <div class="grid grid-cols-[1fr_auto_1fr] gap-2 items-center">
+              <div class="flex gap-2">
+                <input
+                  type="number"
+                  value={unitValue}
+                  min="0"
+                  onInput={(e) => setUnitValue(parseFloat((e.target as HTMLInputElement).value) || 0)}
+                  class="min-w-0 flex-1 px-3 py-2 bg-surface-2 border border-border-dark rounded-lg text-text-primary font-mono text-sm focus:border-teal-500 outline-none"
+                />
+                <select
+                  value={fromUnit}
+                  onChange={(e) => setFromUnit((e.target as HTMLSelectElement).value as DimensionUnit)}
+                  class="px-2 py-2 bg-surface-2 border border-border-dark rounded-lg text-text-primary text-sm outline-none"
+                >
+                  <option value="px">px</option>
+                  <option value="in">in</option>
+                  <option value="mm">mm</option>
+                  <option value="cm">cm</option>
+                </select>
+              </div>
+              <span class="text-text-muted text-sm">→</span>
+              <div class="flex gap-2">
+                <div class="min-w-0 flex-1 px-3 py-2 bg-surface-2 border border-border-dark rounded-lg text-text-primary font-mono text-sm tabular-nums">
+                  {Number.isFinite(converted) ? converted : 0}
+                </div>
+                <select
+                  value={toUnit}
+                  onChange={(e) => setToUnit((e.target as HTMLSelectElement).value as DimensionUnit)}
+                  class="px-2 py-2 bg-surface-2 border border-border-dark rounded-lg text-text-primary text-sm outline-none"
+                >
+                  <option value="px">px</option>
+                  <option value="in">in</option>
+                  <option value="mm">mm</option>
+                  <option value="cm">cm</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
           {/* Nearest Common Ratios */}
           {nearest.length > 0 && (
             <div class="p-4 bg-surface rounded-xl border border-border-dark/50">
@@ -400,6 +510,22 @@ export default function CalculatorIsland() {
             <h3 class="text-xs text-text-muted uppercase tracking-wider mb-4 self-start">Proportion Preview</h3>
             <RatioPreview w={width} h={height} />
           </div>
+
+          {history.length > 0 && (
+            <div class="p-4 bg-surface rounded-xl border border-border-dark/50 space-y-2">
+              <h3 class="text-xs text-text-muted uppercase tracking-wider mb-2">Recent</h3>
+              {history.map((item) => (
+                <button
+                  key={`${item.w}-${item.h}`}
+                  onClick={() => { setWidth(item.w); setHeight(item.h); }}
+                  class="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-sm hover:bg-surface-2 transition-colors"
+                >
+                  <span class="font-mono tabular-nums text-text-primary">{item.w} × {item.h}</span>
+                  <span class="font-mono text-xs text-text-muted">{item.ratio}</span>
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Quick Actions */}
           <div class="p-4 bg-surface rounded-xl border border-border-dark/50 space-y-3">

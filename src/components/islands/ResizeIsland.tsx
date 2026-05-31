@@ -1,21 +1,21 @@
 import { useState, useCallback, useRef, useEffect } from 'preact/hooks';
 import { calculateCrop, calculatePadding, simplify, formatRatio } from '../../lib/ratio';
+import { categoryLabels, platformFormats, type PlatformCategory } from '../../lib/platforms';
 
 type TargetMode = 'ratio' | 'exact' | 'platform';
 type FitMode = 'crop' | 'fit' | 'stretch';
+type ExportFormat = 'png' | 'jpeg' | 'webp';
+type CategoryFilter = 'all' | PlatformCategory;
 
-const platformPresets = [
-  { label: 'YouTube Thumbnail', platform: 'YouTube', w: 1280, h: 720 },
-  { label: 'Instagram Square', platform: 'Instagram', w: 1080, h: 1080 },
-  { label: 'Instagram Story', platform: 'Instagram', w: 1080, h: 1920 },
-  { label: 'Instagram Portrait', platform: 'Instagram', w: 1080, h: 1350 },
-  { label: 'Facebook Post', platform: 'Facebook', w: 1200, h: 630 },
-  { label: 'X/Twitter Post', platform: 'X', w: 1200, h: 675 },
-  { label: 'LinkedIn Post', platform: 'LinkedIn', w: 1200, h: 627 },
-  { label: 'Pinterest Pin', platform: 'Pinterest', w: 1000, h: 1500 },
-  { label: 'TikTok Video', platform: 'TikTok', w: 1080, h: 1920 },
-  { label: 'YouTube Shorts', platform: 'YouTube', w: 1080, h: 1920 },
-];
+const platformPresets = platformFormats.map((format) => ({
+  label: `${format.platform} ${format.name}`,
+  platform: format.platform,
+  name: format.name,
+  category: format.category,
+  w: format.w,
+  h: format.h,
+  ratio: format.ratio,
+}));
 
 const ratioPresets = [
   { label: '16:9', w: 16, h: 9 },
@@ -68,13 +68,19 @@ export default function ResizeIsland() {
   const [exactW, setExactW] = useState(1920);
   const [exactH, setExactH] = useState(1080);
   const [selectedPlatform, setSelectedPlatform] = useState(0);
+  const [selectedPlatforms, setSelectedPlatforms] = useState<number[]>([0]);
+  const [platformQuery, setPlatformQuery] = useState('');
+  const [platformCategory, setPlatformCategory] = useState<CategoryFilter>('all');
 
   const [fitFill, setFitFill] = useState<'blur' | 'color'>('blur');
   const [fitColor, setFitColor] = useState('#000000');
+  const [exportFormat, setExportFormat] = useState<ExportFormat>('png');
+  const [quality, setQuality] = useState(0.92);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
+  const platformCategories: CategoryFilter[] = ['all', 'social', 'video', 'professional', 'print', 'cinema', 'display-ads'];
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -143,9 +149,25 @@ export default function ResizeIsland() {
     let sx = 0, sy = 0, sw = img.naturalWidth, sh = img.naturalHeight;
     if (ir > cr) { sw = img.naturalHeight * cr; sx = (img.naturalWidth - sw) / 2; }
     else { sh = img.naturalWidth / cr; sy = (img.naturalHeight - sh) / 2; }
+    const tiny = document.createElement('canvas');
+    tiny.width = 48;
+    tiny.height = 48;
+    const tinyCtx = tiny.getContext('2d');
+    if (!tinyCtx) return;
+
+    tinyCtx.imageSmoothingEnabled = true;
+    tinyCtx.drawImage(img, sx, sy, sw, sh, 0, 0, tiny.width, tiny.height);
+
     ctx.save();
-    ctx.filter = 'blur(30px) brightness(0.35)';
-    ctx.drawImage(img, sx, sy, sw, sh, -20, -20, cw + 40, ch + 40);
+    ctx.imageSmoothingEnabled = true;
+    for (const offset of [-18, -9, 0, 9, 18]) {
+      ctx.globalAlpha = 0.18;
+      ctx.drawImage(tiny, -24 + offset, -24, cw + 48, ch + 48);
+      ctx.drawImage(tiny, -24, -24 + offset, cw + 48, ch + 48);
+    }
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.42)';
+    ctx.fillRect(0, 0, cw, ch);
     ctx.restore();
   }, []);
 
@@ -232,13 +254,12 @@ export default function ResizeIsland() {
     }
   }, [imageSrc, imgWidth, imgHeight, getEffectiveTarget, fitMode, fitFill, fitColor, drawBlurredBg]);
 
-  const handleExport = useCallback(() => {
+  const createExportCanvas = useCallback((target: { w: number; h: number; isPixel: boolean }) => {
     const img = imgRef.current;
-    if (!img) return;
-    const target = getEffectiveTarget();
+    if (!img) return null;
     const exportCanvas = document.createElement('canvas');
     const ctx = exportCanvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) return null;
 
     if (fitMode === 'stretch') {
       exportCanvas.width = target.w;
@@ -286,16 +307,80 @@ export default function ResizeIsland() {
       }
     }
 
+    return exportCanvas;
+  }, [imgWidth, imgHeight, fitMode, fitFill, fitColor, drawBlurredBg]);
+
+  const handleExport = useCallback(() => {
+    const target = getEffectiveTarget();
+    const exportCanvas = createExportCanvas(target);
+    if (!exportCanvas) return;
+
     const link = document.createElement('a');
     const baseName = fileName ? fileName.replace(/\.[^.]+$/, '') : 'image';
-    link.download = `${baseName}-${target.w}x${target.h}.png`;
-    link.href = exportCanvas.toDataURL('image/png');
+    const mime = exportFormat === 'png' ? 'image/png' : `image/${exportFormat}`;
+    link.download = `${baseName}-${target.w}x${target.h}.${exportFormat === 'jpeg' ? 'jpg' : exportFormat}`;
+    link.href = exportCanvas.toDataURL(mime, exportFormat === 'png' ? undefined : quality);
     link.click();
-  }, [imgWidth, imgHeight, getEffectiveTarget, fitMode, fitFill, fitColor, fileName, drawBlurredBg]);
+  }, [getEffectiveTarget, createExportCanvas, fileName, exportFormat, quality]);
+
+  const handleBatchExport = useCallback(async () => {
+    if (targetMode !== 'platform' || selectedPlatforms.length === 0) return;
+    const { default: JSZip } = await import('jszip');
+    const zip = new JSZip();
+    const mime = exportFormat === 'png' ? 'image/png' : `image/${exportFormat}`;
+    const extension = exportFormat === 'jpeg' ? 'jpg' : exportFormat;
+    const baseName = fileName ? fileName.replace(/\.[^.]+$/, '') : 'image';
+
+    await Promise.all(selectedPlatforms.map(async (index) => {
+      const preset = platformPresets[index];
+      if (!preset) return;
+      const canvas = createExportCanvas({ w: preset.w, h: preset.h, isPixel: true });
+      if (!canvas) return;
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, mime, exportFormat === 'png' ? undefined : quality));
+      if (!blob) return;
+      const safeName = `${baseName}-${preset.platform}-${preset.name}-${preset.w}x${preset.h}`
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
+      zip.file(`${safeName}.${extension}`, blob);
+    }));
+
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    const link = document.createElement('a');
+    link.download = `${baseName}-platform-exports.zip`;
+    link.href = URL.createObjectURL(zipBlob);
+    link.click();
+    URL.revokeObjectURL(link.href);
+  }, [targetMode, selectedPlatforms, createExportCanvas, exportFormat, quality, fileName]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'e') {
+        event.preventDefault();
+        if (targetMode === 'platform' && selectedPlatforms.length > 1) {
+          handleBatchExport();
+        } else {
+          handleExport();
+        }
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [targetMode, selectedPlatforms, handleBatchExport, handleExport]);
 
   const outputDims = getOutputDimensions();
   const target = getEffectiveTarget();
   const srcRatio = imgWidth > 0 ? formatRatio(imgWidth, imgHeight) : '—';
+  const filteredPlatformPresets = platformPresets
+    .map((preset, index) => ({ ...preset, index }))
+    .filter((preset) => {
+      const matchesCategory = platformCategory === 'all' || preset.category === platformCategory;
+      const q = platformQuery.trim().toLowerCase();
+      const matchesQuery = !q || [preset.platform, preset.label, preset.ratio, `${preset.w}`, `${preset.h}`].some((value) =>
+        value.toLowerCase().includes(q)
+      );
+      return matchesCategory && matchesQuery;
+    });
 
   const getRecommendation = (): string => {
     if (!imgWidth) return '';
@@ -375,16 +460,50 @@ export default function ResizeIsland() {
               </button>
             </div>
             {fitFill === 'color' && (
-              <input
-                type="color"
-                value={fitColor}
-                onInput={(e) => setFitColor((e.target as HTMLInputElement).value)}
-                class="w-7 h-7 rounded border border-border-dark cursor-pointer"
-              />
+              <label class="flex items-center gap-2 px-2 py-1 bg-surface border border-border-dark/70 rounded-md cursor-pointer">
+                <span class="w-5 h-5 rounded border border-text-muted/30" style={{ backgroundColor: fitColor }} />
+                <span class="text-[11px] font-mono text-text-muted">{fitColor}</span>
+                <input
+                  type="color"
+                  value={fitColor}
+                  onInput={(e) => setFitColor((e.target as HTMLInputElement).value)}
+                  class="sr-only"
+                />
+              </label>
             )}
           </div>
         )}
       </div>
+
+      {imageSrc && (
+        <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-6 p-3 bg-surface rounded-xl border border-border-dark/50">
+          <select
+            value={exportFormat}
+            onChange={(e) => setExportFormat((e.target as HTMLSelectElement).value as ExportFormat)}
+            class="px-3 py-2 bg-surface-2 border border-border-dark rounded-lg text-sm text-text-primary outline-none"
+          >
+            <option value="png">PNG</option>
+            <option value="jpeg">JPG</option>
+            <option value="webp">WebP</option>
+          </select>
+          {exportFormat !== 'png' && (
+            <label class="flex items-center gap-2 text-xs text-text-muted">
+              Quality
+              <input
+                type="range"
+                min="0.4"
+                max="1"
+                step="0.01"
+                value={quality}
+                onInput={(e) => setQuality(parseFloat((e.target as HTMLInputElement).value))}
+                class="w-28 accent-teal-500"
+              />
+              <span class="font-mono text-text-primary w-8">{Math.round(quality * 100)}</span>
+            </label>
+          )}
+          <span class="text-xs text-text-muted sm:ml-auto">Cmd/Ctrl+E exports the current result.</span>
+        </div>
+      )}
 
       {/* Target-specific controls */}
       <div class="mb-6">
@@ -449,20 +568,68 @@ export default function ResizeIsland() {
         )}
 
         {targetMode === 'platform' && (
-          <div class="flex flex-wrap gap-2">
-            {platformPresets.map((p, i) => (
-              <button
-                key={p.label}
-                onClick={() => setSelectedPlatform(i)}
-                class={`px-3 py-1.5 text-xs rounded-full border transition-all duration-150 ${
-                  selectedPlatform === i
-                    ? 'bg-teal-500/15 border-teal-500/40 text-teal-400'
-                    : 'border-border-dark/50 text-text-muted hover:border-teal-500/30 hover:text-text-primary'
-                }`}
+          <div class="space-y-3">
+            <div class="flex flex-col sm:flex-row gap-2">
+              <input
+                type="search"
+                value={platformQuery}
+                onInput={(e) => setPlatformQuery((e.target as HTMLInputElement).value)}
+                placeholder="Search all platform, print, cinema, ad, and screen presets..."
+                class="flex-1 px-3 py-2 bg-surface-2 border border-border-dark rounded-lg text-sm text-text-primary placeholder:text-text-muted/60 focus:border-teal-500 outline-none"
+              />
+              <select
+                value={platformCategory}
+                onChange={(e) => setPlatformCategory((e.target as HTMLSelectElement).value as CategoryFilter)}
+                class="px-3 py-2 bg-surface-2 border border-border-dark rounded-lg text-sm text-text-primary focus:border-teal-500 outline-none"
               >
-                {p.label}
-              </button>
-            ))}
+                {platformCategories.map((cat) => (
+                  <option key={cat} value={cat}>{cat === 'all' ? 'All categories' : categoryLabels[cat as PlatformCategory]}</option>
+                ))}
+              </select>
+            </div>
+            <div class="max-h-56 overflow-y-auto pr-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {filteredPlatformPresets.map((p) => {
+                const checked = selectedPlatforms.includes(p.index);
+                return (
+                  <label
+                    key={`${p.label}-${p.index}`}
+                    class={`flex items-center gap-2 px-3 py-2 text-xs rounded-lg border transition-all duration-150 cursor-pointer ${
+                      selectedPlatform === p.index
+                        ? 'bg-teal-500/10 border-teal-500/40 text-text-primary'
+                        : 'border-border-dark/50 text-text-muted hover:border-teal-500/30 hover:text-text-primary'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={(e) => {
+                        const isChecked = (e.target as HTMLInputElement).checked;
+                        setSelectedPlatforms((current) => {
+                          const next = isChecked
+                            ? [...new Set([...current, p.index])]
+                            : current.filter((index) => index !== p.index);
+                          return next.length ? next : [p.index];
+                        });
+                        setSelectedPlatform(p.index);
+                      }}
+                      class="accent-teal-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedPlatform(p.index);
+                        setSelectedPlatforms((current) => current.includes(p.index) ? current : [...current, p.index]);
+                      }}
+                      class="min-w-0 flex-1 text-left"
+                    >
+                      <span class="block truncate">{p.label}</span>
+                      <span class="font-mono text-[11px] text-text-muted/70">{p.w}×{p.h} · {p.ratio}</span>
+                    </button>
+                  </label>
+                );
+              })}
+            </div>
+            <p class="text-xs text-text-muted">{selectedPlatforms.length} selected for ZIP export. Click a row label to preview that size.</p>
           </div>
         )}
       </div>
@@ -518,8 +685,16 @@ export default function ResizeIsland() {
                     onClick={handleExport}
                     class="text-xs px-3 py-1 bg-teal-500/15 text-teal-400 hover:bg-teal-500/25 rounded-md transition-colors"
                   >
-                    Export PNG
+                    Export {exportFormat.toUpperCase()}
                   </button>
+                  {targetMode === 'platform' && selectedPlatforms.length > 1 && (
+                    <button
+                      onClick={handleBatchExport}
+                      class="text-xs px-3 py-1 bg-surface-2 text-text-primary hover:text-teal-400 rounded-md transition-colors"
+                    >
+                      Export ZIP
+                    </button>
+                  )}
                   <button
                     onClick={() => {
                       setImageSrc(null);
