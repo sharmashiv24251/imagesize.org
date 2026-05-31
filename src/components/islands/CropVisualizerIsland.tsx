@@ -21,6 +21,42 @@ const presets: Preset[] = [
   { label: '2:3', w: 2, h: 3 },
 ];
 
+const pendingImageDbName = 'aspect-ratio-toolkit';
+const pendingImageStoreName = 'handoff';
+const pendingImageKey = 'image-analyzer-to-crop';
+
+function openPendingImageDb(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(pendingImageDbName, 1);
+    request.onupgradeneeded = () => {
+      request.result.createObjectStore(pendingImageStoreName);
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function takePendingImageFile(): Promise<File | Blob | null> {
+  try {
+    const db = await openPendingImageDb();
+    const file = await new Promise<File | Blob | null>((resolve, reject) => {
+      const tx = db.transaction(pendingImageStoreName, 'readwrite');
+      const store = tx.objectStore(pendingImageStoreName);
+      const getRequest = store.get(pendingImageKey);
+      getRequest.onsuccess = () => {
+        const result = getRequest.result ?? null;
+        store.delete(pendingImageKey);
+        resolve(result);
+      };
+      getRequest.onerror = () => reject(getRequest.error);
+    });
+    db.close();
+    return file;
+  } catch {
+    return null;
+  }
+}
+
 function CopyBtn({ value }: { value: string }) {
   const [copied, setCopied] = useState(false);
   return (
@@ -65,7 +101,19 @@ export default function CropVisualizerIsland() {
   const imgRef = useRef<HTMLImageElement | null>(null);
   const dragRef = useRef<{ pointerX: number; pointerY: number; focusX: number; focusY: number } | null>(null);
 
-  // Read URL params
+  const loadImageSrc = useCallback((src: string) => {
+    const img = new Image();
+    img.onload = () => {
+      imgRef.current = img;
+      setImgWidth(img.naturalWidth);
+      setImgHeight(img.naturalHeight);
+      setImageSrc(src);
+      setCropFocus({ x: 0.5, y: 0.5 });
+    };
+    img.src = src;
+  }, []);
+
+  // Read URL params and pending image handoff.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tw = params.get('tw');
@@ -76,43 +124,40 @@ export default function CropVisualizerIsland() {
       setTargetH(sh);
     }
 
-    const pendingImage = sessionStorage.getItem('aspect-ratio-pending-image');
-    if (pendingImage) {
+    let objectUrl: string | null = null;
+    takePendingImageFile().then((file) => {
+      if (file) {
+        objectUrl = URL.createObjectURL(file);
+        loadImageSrc(objectUrl);
+        sessionStorage.removeItem('aspect-ratio-pending-image-meta');
+        return;
+      }
+
+      const pendingImage = sessionStorage.getItem('aspect-ratio-pending-image');
+      if (!pendingImage) return;
       try {
         const parsed = JSON.parse(pendingImage) as { src?: string };
         if (parsed.src) {
-          const img = new Image();
-          img.onload = () => {
-            imgRef.current = img;
-            setImgWidth(img.naturalWidth);
-            setImgHeight(img.naturalHeight);
-            setImageSrc(parsed.src || null);
-            setCropFocus({ x: 0.5, y: 0.5 });
-            sessionStorage.removeItem('aspect-ratio-pending-image');
-          };
-          img.src = parsed.src;
+          loadImageSrc(parsed.src);
+          sessionStorage.removeItem('aspect-ratio-pending-image');
         }
       } catch {
         sessionStorage.removeItem('aspect-ratio-pending-image');
       }
-    }
-  }, []);
+    });
+
+    return () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [loadImageSrc]);
 
   const loadImage = useCallback((file: File) => {
     const reader = new FileReader();
     reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        imgRef.current = img;
-        setImgWidth(img.naturalWidth);
-        setImgHeight(img.naturalHeight);
-        setImageSrc(e.target?.result as string);
-        setCropFocus({ x: 0.5, y: 0.5 });
-      };
-      img.src = e.target?.result as string;
+      loadImageSrc(e.target?.result as string);
     };
     reader.readAsDataURL(file);
-  }, []);
+  }, [loadImageSrc]);
 
   const handleDrop = useCallback((e: DragEvent) => {
     e.preventDefault();

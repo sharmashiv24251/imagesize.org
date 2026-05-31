@@ -14,6 +14,7 @@ interface ImageInfo {
   fileName: string;
   fileSize: number;
   fileType: string;
+  file: File;
 }
 
 type CategoryFilter = 'all' | PlatformCategory;
@@ -25,6 +26,56 @@ function formatFileSize(bytes: number): string {
 }
 
 type Compatibility = 'fits' | 'crop' | 'wrong';
+
+const pendingImageDbName = 'aspect-ratio-toolkit';
+const pendingImageStoreName = 'handoff';
+const pendingImageKey = 'image-analyzer-to-crop';
+
+function openPendingImageDb(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(pendingImageDbName, 1);
+    request.onupgradeneeded = () => {
+      request.result.createObjectStore(pendingImageStoreName);
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function storePendingImage(image: ImageInfo) {
+  try {
+    sessionStorage.setItem('aspect-ratio-pending-image-meta', JSON.stringify({
+      fileName: image.fileName,
+      width: image.width,
+      height: image.height,
+      fileType: image.fileType,
+    }));
+  } catch {
+    // Metadata is helpful, but the blob handoff is the important part.
+  }
+
+  try {
+    const db = await openPendingImageDb();
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(pendingImageStoreName, 'readwrite');
+      tx.objectStore(pendingImageStoreName).put(image.file, pendingImageKey);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+    db.close();
+  } catch {
+    try {
+      sessionStorage.setItem('aspect-ratio-pending-image', JSON.stringify({
+        src: image.src,
+        fileName: image.fileName,
+        width: image.width,
+        height: image.height,
+      }));
+    } catch {
+      // If storage is unavailable or full, the crop page will still open with the target ratio.
+    }
+  }
+}
 
 function checkCompatibility(imgW: number, imgH: number, targetW: number, targetH: number): Compatibility {
   const imgRatio = imgW / imgH;
@@ -95,6 +146,7 @@ export default function ImageAnalyzerIsland() {
           fileName: file.name,
           fileSize: file.size,
           fileType: file.type,
+          file,
         });
       };
       img.src = e.target?.result as string;
@@ -313,7 +365,7 @@ export default function ImageAnalyzerIsland() {
                       <div>{pf.name}</div>
                       {(pf.safeZone || pf.dpi) && (
                         <div class="mt-1 flex flex-wrap gap-1">
-                          {pf.safeZone && <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/20">Safe zone</span>}
+                          {pf.safeZone && <span title={pf.safeZone} class="text-[10px] px-1.5 py-0.5 rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/20">Safe zone</span>}
                           {pf.dpi && <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-warning/10 text-warning border border-warning/20">{pf.dpi} DPI</span>}
                         </div>
                       )}
@@ -325,13 +377,10 @@ export default function ImageAnalyzerIsland() {
                       {status !== 'fits' && (
                         <a
                           href={`/crop?w=${image.width}&h=${image.height}&tw=${pf.w}&th=${pf.h}`}
-                          onClick={() => {
-                            sessionStorage.setItem('aspect-ratio-pending-image', JSON.stringify({
-                              src: image.src,
-                              fileName: image.fileName,
-                              width: image.width,
-                              height: image.height,
-                            }));
+                          onClick={async (event) => {
+                            event.preventDefault();
+                            await storePendingImage(image);
+                            window.location.href = `/crop?w=${image.width}&h=${image.height}&tw=${pf.w}&th=${pf.h}`;
                           }}
                           class="text-xs text-teal-400 hover:text-teal-300 transition-colors"
                         >
