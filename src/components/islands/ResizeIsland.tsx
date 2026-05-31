@@ -1,17 +1,10 @@
 import { useState, useCallback, useRef, useEffect } from 'preact/hooks';
-import { simplify, formatRatio, scaleDimensions, calculateCrop, calculatePadding, nearestCommonRatios } from '../../lib/ratio';
+import { calculateCrop, calculatePadding, simplify, formatRatio } from '../../lib/ratio';
 
-type ResizeMode = 'exact' | 'ratio-lock' | 'platform';
-type FitMode = 'crop' | 'pad' | 'stretch';
+type TargetMode = 'ratio' | 'exact' | 'platform';
+type FitMode = 'crop' | 'fit' | 'stretch';
 
-interface PlatformPreset {
-  label: string;
-  platform: string;
-  w: number;
-  h: number;
-}
-
-const platformPresets: PlatformPreset[] = [
+const platformPresets = [
   { label: 'YouTube Thumbnail', platform: 'YouTube', w: 1280, h: 720 },
   { label: 'Instagram Square', platform: 'Instagram', w: 1080, h: 1080 },
   { label: 'Instagram Story', platform: 'Instagram', w: 1080, h: 1920 },
@@ -22,6 +15,17 @@ const platformPresets: PlatformPreset[] = [
   { label: 'Pinterest Pin', platform: 'Pinterest', w: 1000, h: 1500 },
   { label: 'TikTok Video', platform: 'TikTok', w: 1080, h: 1920 },
   { label: 'YouTube Shorts', platform: 'YouTube', w: 1080, h: 1920 },
+];
+
+const ratioPresets = [
+  { label: '16:9', w: 16, h: 9 },
+  { label: '4:3', w: 4, h: 3 },
+  { label: '1:1', w: 1, h: 1 },
+  { label: '9:16', w: 9, h: 16 },
+  { label: '4:5', w: 4, h: 5 },
+  { label: '21:9', w: 21, h: 9 },
+  { label: '3:2', w: 3, h: 2 },
+  { label: '2:3', w: 2, h: 3 },
 ];
 
 function CopyBtn({ value }: { value: string }) {
@@ -56,51 +60,57 @@ export default function ResizeIsland() {
   const [imgHeight, setImgHeight] = useState(0);
   const [fileName, setFileName] = useState('');
 
-  const [mode, setMode] = useState<ResizeMode>('exact');
+  const [targetMode, setTargetMode] = useState<TargetMode>('ratio');
   const [fitMode, setFitMode] = useState<FitMode>('crop');
 
-  // Exact mode
-  const [targetW, setTargetW] = useState(1920);
-  const [targetH, setTargetH] = useState(1080);
-
-  // Ratio lock mode
-  const [lockRatioW, setLockRatioW] = useState(16);
-  const [lockRatioH, setLockRatioH] = useState(9);
-  const [lockDim, setLockDim] = useState<'width' | 'height'>('width');
-  const [lockValue, setLockValue] = useState(1920);
-
-  // Platform mode
+  const [ratioW, setRatioW] = useState(16);
+  const [ratioH, setRatioH] = useState(9);
+  const [exactW, setExactW] = useState(1920);
+  const [exactH, setExactH] = useState(1080);
   const [selectedPlatform, setSelectedPlatform] = useState(0);
+
+  const [fitFill, setFitFill] = useState<'blur' | 'color'>('blur');
+  const [fitColor, setFitColor] = useState('#000000');
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
 
-  // Read URL params
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tw = params.get('tw');
     const th = params.get('th');
     if (tw && th) {
-      setTargetW(parseInt(tw, 10));
-      setTargetH(parseInt(th, 10));
+      const pw = parseInt(tw, 10);
+      const ph = parseInt(th, 10);
+      if (pw <= 100 && ph <= 100) {
+        const [sw, sh] = simplify(pw, ph);
+        setRatioW(sw);
+        setRatioH(sh);
+        setTargetMode('ratio');
+      } else {
+        setExactW(pw);
+        setExactH(ph);
+        setTargetMode('exact');
+      }
     }
   }, []);
 
-  // Compute effective target from mode
-  const getEffectiveTarget = useCallback((): { w: number; h: number } => {
-    if (mode === 'platform') {
+  const handleTargetModeChange = (m: TargetMode) => {
+    setTargetMode(m);
+    if (m === 'ratio' && fitMode === 'stretch') setFitMode('crop');
+  };
+
+  const getEffectiveTarget = useCallback((): { w: number; h: number; isPixel: boolean } => {
+    if (targetMode === 'platform') {
       const p = platformPresets[selectedPlatform];
-      return { w: p.w, h: p.h };
+      return { w: p.w, h: p.h, isPixel: true };
     }
-    if (mode === 'ratio-lock') {
-      if (lockDim === 'width') {
-        return { w: lockValue, h: Math.round((lockValue * lockRatioH) / lockRatioW) };
-      }
-      return { w: Math.round((lockValue * lockRatioW) / lockRatioH), h: lockValue };
+    if (targetMode === 'exact') {
+      return { w: exactW, h: exactH, isPixel: true };
     }
-    return { w: targetW, h: targetH };
-  }, [mode, targetW, targetH, lockRatioW, lockRatioH, lockDim, lockValue, selectedPlatform]);
+    return { w: ratioW, h: ratioH, isPixel: false };
+  }, [targetMode, ratioW, ratioH, exactW, exactH, selectedPlatform]);
 
   const loadImage = useCallback((file: File) => {
     if (!file.type.startsWith('image/')) return;
@@ -125,7 +135,6 @@ export default function ResizeIsland() {
     if (file) loadImage(file);
   }, [loadImage]);
 
-  // Draw blurred background for pad mode
   const drawBlurredBg = useCallback((
     ctx: CanvasRenderingContext2D, img: HTMLImageElement, cw: number, ch: number
   ) => {
@@ -140,7 +149,21 @@ export default function ResizeIsland() {
     ctx.restore();
   }, []);
 
-  // Render preview
+  const getOutputDimensions = useCallback((): { w: number; h: number } | null => {
+    if (!imgWidth || !imgHeight) return null;
+    const target = getEffectiveTarget();
+    if (fitMode === 'stretch') return { w: target.w, h: target.h };
+    if (fitMode === 'crop') {
+      if (target.isPixel) return { w: target.w, h: target.h };
+      const crop = calculateCrop(imgWidth, imgHeight, target.w, target.h);
+      return { w: crop.width, h: crop.height };
+    }
+    // fit
+    if (target.isPixel) return { w: target.w, h: target.h };
+    const pad = calculatePadding(imgWidth, imgHeight, target.w, target.h);
+    return { w: pad.totalW, h: pad.totalH };
+  }, [imgWidth, imgHeight, getEffectiveTarget, fitMode]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     const img = imgRef.current;
@@ -156,26 +179,58 @@ export default function ResizeIsland() {
       canvas.width = Math.round(target.w * scale);
       canvas.height = Math.round(target.h * scale);
       ctx.drawImage(img, 0, 0, imgWidth, imgHeight, 0, 0, canvas.width, canvas.height);
-    } else if (fitMode === 'crop') {
+      return;
+    }
+
+    if (fitMode === 'crop') {
       const crop = calculateCrop(imgWidth, imgHeight, target.w, target.h);
+      if (target.isPixel) {
+        const scale = Math.min(maxPreview / target.w, maxPreview / target.h, 1);
+        canvas.width = Math.round(target.w * scale);
+        canvas.height = Math.round(target.h * scale);
+        ctx.drawImage(img, crop.x, crop.y, crop.width, crop.height, 0, 0, canvas.width, canvas.height);
+      } else {
+        const scale = Math.min(maxPreview / crop.width, maxPreview / crop.height, 1);
+        canvas.width = Math.round(crop.width * scale);
+        canvas.height = Math.round(crop.height * scale);
+        ctx.drawImage(img, crop.x, crop.y, crop.width, crop.height, 0, 0, canvas.width, canvas.height);
+      }
+      return;
+    }
+
+    // fit mode
+    if (target.isPixel) {
       const scale = Math.min(maxPreview / target.w, maxPreview / target.h, 1);
       canvas.width = Math.round(target.w * scale);
       canvas.height = Math.round(target.h * scale);
-      ctx.drawImage(img, crop.x, crop.y, crop.width, crop.height, 0, 0, canvas.width, canvas.height);
+      if (fitFill === 'blur') {
+        drawBlurredBg(ctx, img, canvas.width, canvas.height);
+      } else {
+        ctx.fillStyle = fitColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+      const imgScale = Math.min(target.w / imgWidth, target.h / imgHeight) * scale;
+      const scaledW = Math.round(imgWidth * imgScale);
+      const scaledH = Math.round(imgHeight * imgScale);
+      const offsetX = Math.round((canvas.width - scaledW) / 2);
+      const offsetY = Math.round((canvas.height - scaledH) / 2);
+      ctx.drawImage(img, 0, 0, imgWidth, imgHeight, offsetX, offsetY, scaledW, scaledH);
     } else {
-      // pad with blur
       const pad = calculatePadding(imgWidth, imgHeight, target.w, target.h);
       const scale = Math.min(maxPreview / pad.totalW, maxPreview / pad.totalH, 1);
       canvas.width = Math.round(pad.totalW * scale);
       canvas.height = Math.round(pad.totalH * scale);
-      drawBlurredBg(ctx, img, canvas.width, canvas.height);
-      ctx.drawImage(
-        img, 0, 0, imgWidth, imgHeight,
+      if (fitFill === 'blur') {
+        drawBlurredBg(ctx, img, canvas.width, canvas.height);
+      } else {
+        ctx.fillStyle = fitColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+      ctx.drawImage(img, 0, 0, imgWidth, imgHeight,
         Math.round(pad.left * scale), Math.round(pad.top * scale),
-        Math.round(imgWidth * scale), Math.round(imgHeight * scale)
-      );
+        Math.round(imgWidth * scale), Math.round(imgHeight * scale));
     }
-  }, [imageSrc, imgWidth, imgHeight, getEffectiveTarget, fitMode, drawBlurredBg]);
+  }, [imageSrc, imgWidth, imgHeight, getEffectiveTarget, fitMode, fitFill, fitColor, drawBlurredBg]);
 
   const handleExport = useCallback(() => {
     const img = imgRef.current;
@@ -185,140 +240,215 @@ export default function ResizeIsland() {
     const ctx = exportCanvas.getContext('2d');
     if (!ctx) return;
 
-    exportCanvas.width = target.w;
-    exportCanvas.height = target.h;
-
     if (fitMode === 'stretch') {
+      exportCanvas.width = target.w;
+      exportCanvas.height = target.h;
       ctx.drawImage(img, 0, 0, imgWidth, imgHeight, 0, 0, target.w, target.h);
     } else if (fitMode === 'crop') {
       const crop = calculateCrop(imgWidth, imgHeight, target.w, target.h);
-      ctx.drawImage(img, crop.x, crop.y, crop.width, crop.height, 0, 0, target.w, target.h);
+      if (target.isPixel) {
+        exportCanvas.width = target.w;
+        exportCanvas.height = target.h;
+        ctx.drawImage(img, crop.x, crop.y, crop.width, crop.height, 0, 0, target.w, target.h);
+      } else {
+        exportCanvas.width = crop.width;
+        exportCanvas.height = crop.height;
+        ctx.drawImage(img, crop.x, crop.y, crop.width, crop.height, 0, 0, crop.width, crop.height);
+      }
     } else {
-      const pad = calculatePadding(imgWidth, imgHeight, target.w, target.h);
-      drawBlurredBg(ctx, img, pad.totalW, pad.totalH);
-      ctx.drawImage(img, 0, 0, imgWidth, imgHeight, pad.left, pad.top, imgWidth, imgHeight);
+      // fit
+      if (target.isPixel) {
+        exportCanvas.width = target.w;
+        exportCanvas.height = target.h;
+        if (fitFill === 'blur') {
+          drawBlurredBg(ctx, img, target.w, target.h);
+        } else {
+          ctx.fillStyle = fitColor;
+          ctx.fillRect(0, 0, target.w, target.h);
+        }
+        const imgScale = Math.min(target.w / imgWidth, target.h / imgHeight);
+        const scaledW = Math.round(imgWidth * imgScale);
+        const scaledH = Math.round(imgHeight * imgScale);
+        const offsetX = Math.round((target.w - scaledW) / 2);
+        const offsetY = Math.round((target.h - scaledH) / 2);
+        ctx.drawImage(img, 0, 0, imgWidth, imgHeight, offsetX, offsetY, scaledW, scaledH);
+      } else {
+        const pad = calculatePadding(imgWidth, imgHeight, target.w, target.h);
+        exportCanvas.width = pad.totalW;
+        exportCanvas.height = pad.totalH;
+        if (fitFill === 'blur') {
+          drawBlurredBg(ctx, img, pad.totalW, pad.totalH);
+        } else {
+          ctx.fillStyle = fitColor;
+          ctx.fillRect(0, 0, pad.totalW, pad.totalH);
+        }
+        ctx.drawImage(img, 0, 0, imgWidth, imgHeight, pad.left, pad.top, imgWidth, imgHeight);
+      }
     }
 
     const link = document.createElement('a');
-    const baseName = fileName ? fileName.replace(/\.[^.]+$/, '') : 'resized';
+    const baseName = fileName ? fileName.replace(/\.[^.]+$/, '') : 'image';
     link.download = `${baseName}-${target.w}x${target.h}.png`;
     link.href = exportCanvas.toDataURL('image/png');
     link.click();
-  }, [imgWidth, imgHeight, getEffectiveTarget, fitMode, fileName, drawBlurredBg]);
+  }, [imgWidth, imgHeight, getEffectiveTarget, fitMode, fitFill, fitColor, fileName, drawBlurredBg]);
 
+  const outputDims = getOutputDimensions();
   const target = getEffectiveTarget();
   const srcRatio = imgWidth > 0 ? formatRatio(imgWidth, imgHeight) : '—';
-  const tgtRatio = formatRatio(target.w, target.h);
-  const needsChange = imgWidth > 0 && (imgWidth !== target.w || imgHeight !== target.h);
-  const nearest = imgWidth > 0 ? nearestCommonRatios(imgWidth, imgHeight, 1)[0] : null;
 
-  // Recommendation
   const getRecommendation = (): string => {
     if (!imgWidth) return '';
     const srcR = imgWidth / imgHeight;
     const tgtR = target.w / target.h;
     const diff = Math.abs((srcR - tgtR) / tgtR) * 100;
     if (diff < 0.5) return 'Same ratio — simple scale, no quality loss.';
-    if (diff < 5) return 'Very close ratio — minimal crop recommended.';
-    if (srcR > tgtR) return 'Source is wider — crop sides or pad top/bottom.';
-    return 'Source is taller — crop top/bottom or pad sides.';
+    if (diff < 5) return 'Very close ratio — minimal crop or fit recommended.';
+    if (srcR > tgtR) return 'Source is wider — crop sides or fit with top/bottom padding.';
+    return 'Source is taller — crop top/bottom or fit with side padding.';
   };
 
   return (
     <div class="w-full max-w-5xl mx-auto">
-      {/* Mode Selector */}
-      <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
+      {/* Controls */}
+      <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-4 flex-wrap">
+        {/* Target Mode */}
         <div class="flex items-center gap-1 p-1 bg-surface rounded-lg border border-border-dark/50">
-          {(['exact', 'ratio-lock', 'platform'] as ResizeMode[]).map((m) => (
+          {(['ratio', 'exact', 'platform'] as TargetMode[]).map((m) => (
             <button
               key={m}
-              onClick={() => setMode(m)}
-              class={`px-4 py-2 text-sm rounded-md transition-all duration-150 ${
-                mode === m
+              onClick={() => handleTargetModeChange(m)}
+              class={`px-3 py-1.5 text-sm rounded-md transition-all duration-150 ${
+                targetMode === m
                   ? 'bg-teal-500/15 text-teal-400 font-medium'
                   : 'text-text-muted hover:text-text-primary'
               }`}
-              id={`resize-mode-${m}`}
             >
-              {m === 'exact' ? 'Exact Size' : m === 'ratio-lock' ? 'Lock Ratio' : 'Platform'}
+              {m === 'exact' ? 'Exact' : m === 'ratio' ? 'Ratio' : 'Platform'}
             </button>
           ))}
         </div>
+
+        {/* Fit Mode */}
+        <div class="flex items-center gap-1 p-1 bg-surface rounded-lg border border-border-dark/50">
+          {(['crop', 'fit', 'stretch'] as FitMode[])
+            .filter((f) => !(targetMode === 'ratio' && f === 'stretch'))
+            .map((f) => (
+              <button
+                key={f}
+                onClick={() => setFitMode(f)}
+                class={`px-3 py-1.5 text-sm rounded-md transition-all duration-150 capitalize ${
+                  fitMode === f
+                    ? 'bg-teal-500/15 text-teal-400 font-medium'
+                    : 'text-text-muted hover:text-text-primary'
+                }`}
+              >
+                {f}
+              </button>
+            ))}
+        </div>
+
+        {/* Fill options for fit mode */}
+        {fitMode === 'fit' && (
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-text-muted">Fill:</span>
+            <div class="flex items-center gap-0.5 p-0.5 bg-surface rounded-md border border-border-dark/50">
+              <button
+                onClick={() => setFitFill('blur')}
+                class={`px-2 py-1 text-[11px] rounded transition-all ${
+                  fitFill === 'blur'
+                    ? 'bg-teal-500/15 text-teal-400 font-medium'
+                    : 'text-text-muted hover:text-text-primary'
+                }`}
+              >
+                Blur
+              </button>
+              <button
+                onClick={() => setFitFill('color')}
+                class={`px-2 py-1 text-[11px] rounded transition-all ${
+                  fitFill === 'color'
+                    ? 'bg-teal-500/15 text-teal-400 font-medium'
+                    : 'text-text-muted hover:text-text-primary'
+                }`}
+              >
+                Color
+              </button>
+            </div>
+            {fitFill === 'color' && (
+              <input
+                type="color"
+                value={fitColor}
+                onInput={(e) => setFitColor((e.target as HTMLInputElement).value)}
+                class="w-7 h-7 rounded border border-border-dark cursor-pointer"
+              />
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Mode-specific Controls */}
+      {/* Target-specific controls */}
       <div class="mb-6">
-        {mode === 'exact' && (
-          <div class="flex items-center gap-3 flex-wrap">
-            <span class="text-xs text-text-muted">Target:</span>
-            <input
-              type="number" value={targetW} min="1"
-              onInput={(e) => setTargetW(Math.max(1, parseInt((e.target as HTMLInputElement).value, 10) || 1))}
-              class="w-20 px-2 py-1.5 bg-surface-2 border border-border-dark rounded-md text-text-primary font-mono text-sm text-center focus:border-teal-500 outline-none"
-              id="resize-target-w"
-            />
-            <span class="text-text-muted font-mono">×</span>
-            <input
-              type="number" value={targetH} min="1"
-              onInput={(e) => setTargetH(Math.max(1, parseInt((e.target as HTMLInputElement).value, 10) || 1))}
-              class="w-20 px-2 py-1.5 bg-surface-2 border border-border-dark rounded-md text-text-primary font-mono text-sm text-center focus:border-teal-500 outline-none"
-              id="resize-target-h"
-            />
-            <span class="text-xs text-text-muted ml-1">px</span>
-
-            {/* Fit mode */}
-            <div class="flex items-center gap-1 p-0.5 bg-surface rounded-md border border-border-dark/50 ml-3">
-              {(['crop', 'pad', 'stretch'] as FitMode[]).map((f) => (
+        {targetMode === 'ratio' && (
+          <div class="flex flex-wrap items-center gap-3">
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-text-muted">Target:</span>
+              <input
+                type="number"
+                value={ratioW}
+                min="1"
+                onInput={(e) => setRatioW(Math.max(1, parseInt((e.target as HTMLInputElement).value, 10) || 1))}
+                class="w-16 px-2 py-1.5 bg-surface-2 border border-border-dark rounded-md text-text-primary font-mono text-sm text-center focus:border-teal-500 outline-none"
+              />
+              <span class="text-text-muted font-mono">:</span>
+              <input
+                type="number"
+                value={ratioH}
+                min="1"
+                onInput={(e) => setRatioH(Math.max(1, parseInt((e.target as HTMLInputElement).value, 10) || 1))}
+                class="w-16 px-2 py-1.5 bg-surface-2 border border-border-dark rounded-md text-text-primary font-mono text-sm text-center focus:border-teal-500 outline-none"
+              />
+            </div>
+            <div class="flex flex-wrap gap-2">
+              {ratioPresets.map((p) => (
                 <button
-                  key={f}
-                  onClick={() => setFitMode(f)}
-                  class={`px-2.5 py-1 text-[11px] rounded capitalize transition-all ${
-                    fitMode === f
-                      ? 'bg-teal-500/15 text-teal-400 font-medium'
-                      : 'text-text-muted hover:text-text-primary'
+                  key={p.label}
+                  onClick={() => { setRatioW(p.w); setRatioH(p.h); }}
+                  class={`px-3 py-1 text-xs font-mono rounded-full border transition-all duration-150 ${
+                    ratioW === p.w && ratioH === p.h
+                      ? 'bg-teal-500/15 border-teal-500/40 text-teal-400'
+                      : 'border-border-dark/50 text-text-muted hover:border-teal-500/30 hover:text-text-primary'
                   }`}
                 >
-                  {f}
+                  {p.label}
                 </button>
               ))}
             </div>
           </div>
         )}
 
-        {mode === 'ratio-lock' && (
+        {targetMode === 'exact' && (
           <div class="flex items-center gap-3 flex-wrap">
-            <span class="text-xs text-text-muted">Ratio:</span>
+            <span class="text-xs text-text-muted">Target:</span>
             <input
-              type="number" value={lockRatioW} min="1"
-              onInput={(e) => setLockRatioW(Math.max(1, parseInt((e.target as HTMLInputElement).value, 10) || 1))}
-              class="w-16 px-2 py-1.5 bg-surface-2 border border-border-dark rounded-md text-text-primary font-mono text-sm text-center focus:border-teal-500 outline-none"
+              type="number"
+              value={exactW}
+              min="1"
+              onInput={(e) => setExactW(Math.max(1, parseInt((e.target as HTMLInputElement).value, 10) || 1))}
+              class="w-20 px-2 py-1.5 bg-surface-2 border border-border-dark rounded-md text-text-primary font-mono text-sm text-center focus:border-teal-500 outline-none"
             />
-            <span class="text-text-muted font-mono">:</span>
+            <span class="text-text-muted font-mono">×</span>
             <input
-              type="number" value={lockRatioH} min="1"
-              onInput={(e) => setLockRatioH(Math.max(1, parseInt((e.target as HTMLInputElement).value, 10) || 1))}
-              class="w-16 px-2 py-1.5 bg-surface-2 border border-border-dark rounded-md text-text-primary font-mono text-sm text-center focus:border-teal-500 outline-none"
-            />
-            <span class="mx-2 text-text-muted">|</span>
-            <select
-              value={lockDim}
-              onChange={(e) => setLockDim((e.target as HTMLSelectElement).value as 'width' | 'height')}
-              class="px-2 py-1.5 bg-surface-2 border border-border-dark rounded-md text-text-primary text-sm focus:border-teal-500 outline-none"
-            >
-              <option value="width">Width</option>
-              <option value="height">Height</option>
-            </select>
-            <span class="text-text-muted">=</span>
-            <input
-              type="number" value={lockValue} min="1"
-              onInput={(e) => setLockValue(Math.max(1, parseInt((e.target as HTMLInputElement).value, 10) || 1))}
+              type="number"
+              value={exactH}
+              min="1"
+              onInput={(e) => setExactH(Math.max(1, parseInt((e.target as HTMLInputElement).value, 10) || 1))}
               class="w-20 px-2 py-1.5 bg-surface-2 border border-border-dark rounded-md text-text-primary font-mono text-sm text-center focus:border-teal-500 outline-none"
             />
             <span class="text-xs text-text-muted">px</span>
           </div>
         )}
 
-        {mode === 'platform' && (
+        {targetMode === 'platform' && (
           <div class="flex flex-wrap gap-2">
             {platformPresets.map((p, i) => (
               <button
@@ -346,10 +476,12 @@ export default function ResizeIsland() {
               onDragOver={(e) => e.preventDefault()}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
-              id="resize-drop-zone"
             >
               <input
-                ref={fileInputRef} type="file" accept="image/*" class="hidden"
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                class="hidden"
                 onChange={(e) => {
                   const file = (e.target as HTMLInputElement).files?.[0];
                   if (file) loadImage(file);
@@ -358,11 +490,13 @@ export default function ResizeIsland() {
               <div class="flex flex-col items-center gap-4">
                 <div class="w-14 h-14 rounded-full bg-surface-2 flex items-center justify-center">
                   <svg class="w-7 h-7 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                    <path d="M4 14l4-4 4 4M12 14l4-4 4 4" /><rect x="2" y="4" width="20" height="16" rx="2" />
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <path d="M21 15l-5-5L5 21" />
                   </svg>
                 </div>
                 <div>
-                  <p class="text-text-primary font-medium mb-1">Drop an image to resize</p>
+                  <p class="text-text-primary font-medium mb-1">Drop an image to start</p>
                   <p class="text-sm text-text-muted">Or click to browse • 100% client-side</p>
                 </div>
               </div>
@@ -370,20 +504,30 @@ export default function ResizeIsland() {
           ) : (
             <div class="bg-surface rounded-xl border border-border-dark/50 overflow-hidden">
               <div class="p-3 bg-surface-2/50 border-b border-border-dark/30 flex items-center justify-between">
-                <span class="text-xs text-text-muted">
-                  Resize Preview
-                  <span class="ml-2 font-mono text-teal-400">{target.w}×{target.h}</span>
+                <span class="text-xs text-text-muted capitalize">
+                  {fitMode} Preview
+                  {targetMode === 'platform' && (
+                    <span class="ml-1 text-text-muted/60">· {platformPresets[selectedPlatform].label}</span>
+                  )}
+                  <span class="ml-2 font-mono text-teal-400">
+                    {targetMode === 'ratio' ? `${ratioW}:${ratioH}` : `${target.w}×${target.h}`}
+                  </span>
                 </span>
                 <div class="flex items-center gap-2">
                   <button
                     onClick={handleExport}
                     class="text-xs px-3 py-1 bg-teal-500/15 text-teal-400 hover:bg-teal-500/25 rounded-md transition-colors"
-                    id="btn-resize-export"
                   >
                     Export PNG
                   </button>
                   <button
-                    onClick={() => { setImageSrc(null); imgRef.current = null; setImgWidth(0); setImgHeight(0); }}
+                    onClick={() => {
+                      setImageSrc(null);
+                      imgRef.current = null;
+                      setImgWidth(0);
+                      setImgHeight(0);
+                      setFileName('');
+                    }}
                     class="text-xs text-text-muted hover:text-danger transition-colors"
                   >
                     Remove
@@ -391,7 +535,11 @@ export default function ResizeIsland() {
                 </div>
               </div>
               <div class="p-4 flex items-center justify-center bg-[#0a0a0a] min-h-[300px]">
-                <canvas ref={canvasRef} class="max-w-full max-h-[400px] rounded-sm" style="image-rendering: auto;" />
+                <canvas
+                  ref={canvasRef}
+                  class="max-w-full max-h-[400px] rounded-sm"
+                  style="image-rendering: auto;"
+                />
               </div>
             </div>
           )}
@@ -399,13 +547,13 @@ export default function ResizeIsland() {
 
         {/* Info Panel */}
         <div class="space-y-4">
-          {imageSrc && imgWidth > 0 && (
+          {imageSrc && imgWidth > 0 ? (
             <>
               <div class="p-4 bg-surface rounded-xl border border-border-dark/50">
                 <h3 class="text-xs text-text-muted uppercase tracking-wider mb-3">Source</h3>
                 <div class="space-y-2 text-sm">
                   <div class="flex justify-between">
-                    <span class="text-text-muted">Dimensions</span>
+                    <span class="text-text-muted">Size</span>
                     <div class="flex items-center gap-2">
                       <span class="font-mono tabular-nums text-text-primary">{imgWidth} × {imgHeight}</span>
                       <CopyBtn value={`${imgWidth}x${imgHeight}`} />
@@ -415,72 +563,56 @@ export default function ResizeIsland() {
                     <span class="text-text-muted">Ratio</span>
                     <span class="font-mono tabular-nums text-text-primary">{srcRatio}</span>
                   </div>
-                  {nearest && (
+                </div>
+              </div>
+
+              {outputDims && (
+                <div class="p-4 bg-surface rounded-xl border border-border-dark/50">
+                  <h3 class="text-xs text-text-muted uppercase tracking-wider mb-3">Output</h3>
+                  <div class="space-y-2 text-sm">
                     <div class="flex justify-between">
-                      <span class="text-text-muted">Nearest</span>
-                      <span class="font-mono tabular-nums text-teal-400 text-xs">{nearest.ratio.label} ({nearest.confidence})</span>
+                      <span class="text-text-muted">Size</span>
+                      <div class="flex items-center gap-2">
+                        <span class="font-mono tabular-nums text-text-primary">{outputDims.w} × {outputDims.h}</span>
+                        <CopyBtn value={`${outputDims.w}x${outputDims.h}`} />
+                      </div>
                     </div>
-                  )}
-                </div>
-              </div>
-
-              <div class="p-4 bg-surface rounded-xl border border-border-dark/50">
-                <h3 class="text-xs text-text-muted uppercase tracking-wider mb-3">Output</h3>
-                <div class="space-y-2 text-sm">
-                  <div class="flex justify-between">
-                    <span class="text-text-muted">Dimensions</span>
-                    <div class="flex items-center gap-2">
-                      <span class="font-mono tabular-nums text-text-primary">{target.w} × {target.h}</span>
-                      <CopyBtn value={`${target.w}x${target.h}`} />
+                    <div class="flex justify-between">
+                      <span class="text-text-muted">Ratio</span>
+                      <span class="font-mono tabular-nums text-text-primary">{formatRatio(outputDims.w, outputDims.h)}</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span class="text-text-muted">Mode</span>
+                      <span class="font-mono tabular-nums text-xs text-teal-400 capitalize">{fitMode}</span>
                     </div>
                   </div>
-                  <div class="flex justify-between">
-                    <span class="text-text-muted">Ratio</span>
-                    <span class="font-mono tabular-nums text-text-primary">{tgtRatio}</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-text-muted">Scale</span>
-                    <span class="font-mono tabular-nums text-xs">
-                      {imgWidth > 0 ? `${Math.round((target.w / imgWidth) * 100)}% W` : '—'}
-                      {' · '}
-                      {imgHeight > 0 ? `${Math.round((target.h / imgHeight) * 100)}% H` : '—'}
-                    </span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-text-muted">Fit</span>
-                    <span class="font-mono tabular-nums text-xs capitalize text-teal-400">{fitMode}</span>
-                  </div>
-                </div>
-              </div>
-
-              {needsChange && (
-                <div class="p-4 bg-teal-500/5 rounded-xl border border-teal-500/20">
-                  <h3 class="text-xs text-teal-400 uppercase tracking-wider mb-2">Recommendation</h3>
-                  <p class="text-xs text-text-muted leading-relaxed">{getRecommendation()}</p>
                 </div>
               )}
-            </>
-          )}
 
-          {!imageSrc && (
+              <div class="p-4 bg-teal-500/5 rounded-xl border border-teal-500/20">
+                <h3 class="text-xs text-teal-400 uppercase tracking-wider mb-2">Tip</h3>
+                <p class="text-xs text-text-muted leading-relaxed">{getRecommendation()}</p>
+              </div>
+            </>
+          ) : (
             <div class="p-4 bg-surface rounded-xl border border-border-dark/50">
               <h3 class="text-xs text-text-muted uppercase tracking-wider mb-3">How it works</h3>
               <ol class="space-y-2 text-sm text-text-muted">
                 <li class="flex items-start gap-2">
                   <span class="text-teal-400 font-mono text-xs mt-0.5">1</span>
-                  <span>Upload your image</span>
+                  <span>Upload an image</span>
                 </li>
                 <li class="flex items-start gap-2">
                   <span class="text-teal-400 font-mono text-xs mt-0.5">2</span>
-                  <span>Pick a target size or platform preset</span>
+                  <span>Choose target: ratio, exact size, or platform preset</span>
                 </li>
                 <li class="flex items-start gap-2">
                   <span class="text-teal-400 font-mono text-xs mt-0.5">3</span>
-                  <span>Choose fit mode: crop, pad, or stretch</span>
+                  <span>Pick fit mode: crop, fit, or stretch</span>
                 </li>
                 <li class="flex items-start gap-2">
                   <span class="text-teal-400 font-mono text-xs mt-0.5">4</span>
-                  <span>Export at exact target dimensions</span>
+                  <span>Export at full resolution</span>
                 </li>
               </ol>
             </div>

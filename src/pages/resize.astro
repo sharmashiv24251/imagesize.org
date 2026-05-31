@@ -6,51 +6,47 @@ import RelatedTools from '../components/ui/RelatedTools.astro';
 import ResizeIsland from '../components/islands/ResizeIsland';
 import { buildWebApplicationLD, buildFAQLD, buildBreadcrumbLD, buildHowToLD } from '../lib/seo';
 
-const title = 'Resize Images Without Distortion — Free Online Resizer';
-const description = 'Resize any image to exact pixel dimensions or platform presets. Smart crop-vs-pad recommendation, ratio-lock scaling, and full-resolution export — 100% in your browser.';
+const title = 'Crop & Resize Images — Free Online Tool';
+const description = 'Crop, fit, or stretch any image to a target ratio, exact dimensions, or platform preset. Live preview with full-resolution export — 100% in your browser.';
 
 const faqs = [
   {
-    question: 'How do I resize an image without distortion?',
-    answer: 'Use <strong>Lock Ratio</strong> mode to maintain proportions while changing size. Or use <strong>Exact Size</strong> with the <em>crop</em> or <em>pad</em> fit mode — crop removes edges to fit, padding adds bars to fill. Only <em>stretch</em> distorts the image.',
+    question: 'What\'s the difference between crop, fit, and stretch?',
+    answer: '<strong>Crop</strong> removes pixels from the edges to fill the target ratio — your image stays sharp but edges are trimmed. <strong>Fit</strong> (letterbox/padding) keeps the whole image visible and fills the remaining space with a blurred background or solid color. <strong>Stretch</strong> scales the image to fit exactly, which may distort proportions.',
   },
   {
-    question: 'What\'s the difference between crop, pad, and stretch?',
-    answer: '<strong>Crop</strong> cuts pixels from the edges to fit the target dimensions, keeping the image sharp. <strong>Pad</strong> adds a blurred background fill around the image to reach the target size. <strong>Stretch</strong> scales the image to fit exactly, which may distort proportions if the aspect ratio changes.',
-  },
-  {
-    question: 'Can I resize for specific social media platforms?',
-    answer: 'Yes — switch to <strong>Platform</strong> mode to see presets for YouTube thumbnails, Instagram posts/stories, Facebook, X/Twitter, LinkedIn, Pinterest, and TikTok. Each preset sets the exact recommended dimensions.',
+    question: 'What\'s the difference between Ratio, Exact, and Platform modes?',
+    answer: '<strong>Ratio</strong> mode targets an aspect ratio (e.g. 16:9) — output size is based on your source image. <strong>Exact</strong> mode outputs at specific pixel dimensions (e.g. 1920×1080). <strong>Platform</strong> mode uses recommended dimensions for social media platforms like YouTube, Instagram, or TikTok.',
   },
   {
     question: 'What resolution is the exported image?',
-    answer: 'The export matches the exact target dimensions you set. If you resize a 6000×4000 image to 1920×1080, the output is exactly 1920×1080 pixels. The tool renders at full resolution, not the scaled preview.',
+    answer: 'In Ratio mode, output preserves your source resolution — only pixels are trimmed or added. In Exact and Platform modes, the output matches your chosen pixel dimensions exactly.',
   },
   {
-    question: 'Is there a file size limit?',
-    answer: 'There\'s no hard limit since everything happens in your browser. Very large images (50MP+) may be slow depending on your device\'s memory. The tool works with any format your browser supports: PNG, JPEG, WebP, GIF, AVIF, and more.',
+    question: 'Can I change the fill color in Fit mode?',
+    answer: 'Yes — in Fit mode, switch between Blur (a blurred version of your image as background) or Color (pick any solid color).',
   },
   {
     question: 'Is this tool free?',
-    answer: 'Yes, unlimited single-image resizing is free. All processing happens locally in your browser — nothing is uploaded.',
+    answer: 'Yes, unlimited single-image processing is free. All processing happens locally in your browser — nothing is uploaded.',
   },
 ];
 
 const jsonLD = [
-  buildWebApplicationLD('Image Resizer', description, 'https://aspectratio.dev/resize'),
+  buildWebApplicationLD('Crop & Resize Tool', description, 'https://aspectratio.dev/resize'),
   buildFAQLD(faqs),
   buildBreadcrumbLD([
     { name: 'Home', url: 'https://aspectratio.dev' },
-    { name: 'Resize', url: 'https://aspectratio.dev/resize' },
+    { name: 'Crop & Resize', url: 'https://aspectratio.dev/resize' },
   ]),
   buildHowToLD(
-    'How to Resize an Image Without Distortion',
-    'Resize any image to exact dimensions while preserving quality using crop, pad, or ratio-lock modes.',
+    'How to Crop or Resize an Image to Any Aspect Ratio',
+    'Crop, fit, or stretch any image to a target ratio or exact dimensions with live preview and full-resolution export.',
     [
-      { name: 'Upload your image', text: 'Drag and drop an image or click to browse. The tool reads it locally — nothing is uploaded to any server.' },
-      { name: 'Choose your target size', text: 'Enter exact pixel dimensions, lock a ratio and set one dimension, or pick a social media platform preset.' },
-      { name: 'Select fit mode', text: 'Choose Crop to trim edges, Pad to add a blurred background, or Stretch to scale to fit. Crop and Pad preserve quality.' },
-      { name: 'Export the result', text: 'Click Export PNG to download the resized image at full target resolution.' },
+      { name: 'Upload your image', text: 'Drag and drop an image onto the drop zone or click to browse. The tool reads the image locally — no upload to any server.' },
+      { name: 'Choose your target', text: 'Use Ratio mode for aspect ratio presets (16:9, 4:3, etc.), Exact mode for specific pixel dimensions, or Platform mode for social media presets.' },
+      { name: 'Select fit mode', text: 'Choose Crop to trim edges, Fit to add fill around the image, or Stretch to scale to fit exactly.' },
+      { name: 'Export the result', text: 'Preview the result in real time, then click Export PNG to download at full resolution.' },
     ],
     'https://aspectratio.dev/resize'
   ),
@@ -58,14 +54,8 @@ const jsonLD = [
 
 const relatedTools = [
   {
-    title: 'Crop & Resize',
-    description: 'Fine-grained crop control with padding and letterbox modes.',
-    href: '/crop',
-    icon: '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M6.13 1L6 16a2 2 0 002 2h15"/><path d="M1 6.13L16 6a2 2 0 012 2v15"/></svg>',
-  },
-  {
     title: 'Image Analyzer',
-    description: 'Check your image ratio and platform compatibility before resizing.',
+    description: 'Upload an image for instant ratio detection and platform compatibility check.',
     href: '/image',
     icon: '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>',
   },
@@ -78,64 +68,46 @@ const relatedTools = [
 ];
 ---
 
-<Layout title={title} description={description} jsonLD={jsonLD} tier={1}>
+<Layout title={title} description={description} jsonLD={jsonLD}>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <Breadcrumb items={[
       { name: 'Home', url: '/' },
-      { name: 'Resize', url: '/resize' },
+      { name: 'Crop & Resize', url: '/resize' },
     ]} />
 
     <div class="mb-8">
       <h1 class="text-3xl sm:text-4xl font-bold text-text-primary tracking-tight mb-3">
-        Resize Images Without Distortion
+        Crop & Resize to Any Aspect Ratio
       </h1>
       <p class="text-text-muted max-w-2xl">
-        Enter exact pixel dimensions or choose a platform preset. Smart fit modes — crop, pad, or stretch — with real-time preview and full-resolution export. <strong class="text-text-primary">Everything stays in your browser.</strong>
+        Upload an image, choose a target ratio, exact size, or platform preset — then crop, fit, or stretch to match. Live preview, full-resolution export. <strong class="text-text-primary">Everything happens in your browser.</strong>
       </p>
     </div>
 
-    <!-- Resize Island -->
     <div class="mb-12">
       <ResizeIsland client:load />
     </div>
 
-    <!-- On-page explainer -->
     <div class="max-w-3xl mx-auto mb-12">
-      <h2 class="text-xl font-semibold text-text-primary mb-4">How Image Resizing Works</h2>
+      <h2 class="text-xl font-semibold text-text-primary mb-4">How to Use the Tool</h2>
       <div class="text-sm text-text-muted space-y-4 leading-relaxed">
         <p>
-          Resizing an image means changing its pixel dimensions. The challenge is doing this <strong class="text-text-primary">without distortion</strong> — if you change the aspect ratio (the width-to-height proportion), the image will look stretched or squished.
+          <strong class="text-text-primary">Target mode</strong> controls what you're aiming for. <em>Ratio</em> lets you pick an aspect ratio (16:9, 4:3, 1:1, etc.) and the output size scales from your source image. <em>Exact</em> lets you set precise pixel dimensions like 1920×1080. <em>Platform</em> gives you one-click presets for YouTube, Instagram, TikTok, and more.
         </p>
         <p>
-          This tool offers three <strong class="text-text-primary">fit strategies</strong> when the target ratio differs from the source:
+          <strong class="text-text-primary">Fit mode</strong> controls how the image fills the target. <em>Crop</em> trims pixels from the center-out to fit the ratio — nothing is added, but edges are removed. <em>Fit</em> keeps your full image visible and fills any remaining space with a blurred background or solid color. <em>Stretch</em> scales the image to exactly fill the target, which can distort proportions.
         </p>
-        <ul class="space-y-2 list-none pl-0">
-          <li class="flex items-start gap-2">
-            <span class="text-teal-400 font-medium text-xs mt-0.5 shrink-0">Crop</span>
-            <span>Trims pixels from the edges, keeping the center. Best when you want to fill the entire frame with no empty space.</span>
-          </li>
-          <li class="flex items-start gap-2">
-            <span class="text-teal-400 font-medium text-xs mt-0.5 shrink-0">Pad</span>
-            <span>Adds a blurred-background fill around the image. Nothing is removed, but the canvas extends to match the target ratio.</span>
-          </li>
-          <li class="flex items-start gap-2">
-            <span class="text-teal-400 font-medium text-xs mt-0.5 shrink-0">Stretch</span>
-            <span>Scales the image to fit exactly, ignoring aspect ratio. Use only when distortion is acceptable (e.g., abstract textures).</span>
-          </li>
-        </ul>
         <p>
-          The <strong class="text-text-primary">Lock Ratio</strong> mode avoids this problem entirely — it constrains the output to a specific ratio so you only need to set one dimension. The other is calculated automatically.
+          <strong class="text-text-primary">Step 4:</strong> Preview the result in real time, then click <em>Export PNG</em> to download at full resolution.
         </p>
       </div>
     </div>
 
-    <!-- FAQ -->
     <div class="max-w-3xl mx-auto mb-12">
       <h2 class="text-xl font-semibold text-text-primary mb-4">Frequently Asked Questions</h2>
       <FAQ items={faqs} />
     </div>
 
-    <!-- Related Tools -->
     <div class="max-w-3xl mx-auto mb-8">
       <h2 class="text-xl font-semibold text-text-primary mb-4">Related Tools</h2>
       <RelatedTools tools={relatedTools} />
