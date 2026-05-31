@@ -897,6 +897,63 @@ const exactTermSpecs: Record<string, InferredImageSizeSpec> = {
   'youtube post': { category: 'video', w: 1080, h: 1080, ratio: '1:1', href: '/youtube-community-post-size' },
   'youtube channel background': { category: 'video', w: 2560, h: 1440, ratio: '16:9', href: '/youtube-channel-banner-size' },
   'youtube community post': { category: 'video', w: 1080, h: 1080, ratio: '1:1', href: '/youtube-community-post-size' },
+  // Indian exams — unique dimensions
+  'gate': { category: 'education', w: 240, h: 320, ratio: '3:4', description: 'GATE application photo workspace: 240×320 px, white background. Confirm the current GATE notice.' },
+  'gate 2025': { category: 'education', w: 240, h: 320, ratio: '3:4', description: 'GATE 2025 photo workspace: 240×320 px.' },
+  'gate 2026': { category: 'education', w: 240, h: 320, ratio: '3:4', description: 'GATE 2026 photo workspace: 240×320 px.' },
+  'cat': { category: 'education', w: 180, h: 240, ratio: '3:4', description: 'CAT application photo workspace: 180×240 px. Confirm the official CAT bulletin before uploading.' },
+  'xat': { category: 'education', w: 180, h: 240, ratio: '3:4', description: 'XAT application photo workspace: 180×240 px.' },
+  'snap': { category: 'education', w: 200, h: 230, ratio: '20:23', description: 'SNAP application photo workspace: 200×230 px, JPEG, white background.' },
+  'nmat': { category: 'education', w: 200, h: 230, ratio: '20:23', description: 'NMAT application photo workspace: 200×230 px.' },
+  'cmat': { category: 'education', w: 200, h: 230, ratio: '20:23', description: 'CMAT application photo workspace: 200×230 px.' },
+  // US visa / immigration — 2×2 inch = 600×600 px at 300 DPI
+  'us passport photo': { category: 'visa', w: 600, h: 600, ratio: '1:1', description: 'US passport photo: 2×2 inch (600×600 px at 300 DPI), white background, State Department spec.' },
+  'compress photo for us passport': { category: 'visa', w: 600, h: 600, ratio: '1:1', description: 'Compress US passport photo under 240 KB for online applications. 2×2 inch, white background.' },
+  'uscis photo': { category: 'visa', w: 600, h: 600, ratio: '1:1', description: 'USCIS application photo: 2×2 inch (600×600 px), white background, full-face.' },
+  'uscis photo requirements': { category: 'visa', w: 600, h: 600, ratio: '1:1', description: 'USCIS photo requirements: 2×2 inch (600×600 px at 300 DPI), white background.' },
+  'uscis photo size in kb': { category: 'visa', w: 600, h: 600, ratio: '1:1', description: 'USCIS photo: 2×2 inch, under 240 KB for online filing.' },
+  'green card photo': { category: 'visa', w: 600, h: 600, ratio: '1:1', description: 'Green card application photo: 2×2 inch (600×600 px). Confirm USCIS requirements.' },
+  'green card photo size': { category: 'visa', w: 600, h: 600, ratio: '1:1', description: 'USCIS green card photo: 2×2 inch (600×600 px), white background.' },
+  'naturalization photo requirements': { category: 'visa', w: 600, h: 600, ratio: '1:1', description: 'N-400 naturalization photo: 2×2 inch (600×600 px at 300 DPI).' },
+  'compress photo for uscis form': { category: 'visa', w: 600, h: 600, ratio: '1:1', description: 'USCIS form photo: 2×2 inch, compress under 240 KB.' },
+  'i-485 photo requirements': { category: 'visa', w: 600, h: 600, ratio: '1:1', description: 'I-485 (green card) photo: 2×2 inch, white background, USCIS compliant.' },
+  'h1b visa photo size': { category: 'visa', w: 600, h: 600, ratio: '1:1', description: 'H-1B visa photo workspace: 2×2 inch (600×600 px).' },
+  'f1 student visa photo requirements': { category: 'visa', w: 600, h: 600, ratio: '1:1', description: 'F-1 student visa photo: 2×2 inch, white background.' },
+  'opt application photo size': { category: 'visa', w: 600, h: 600, ratio: '1:1', description: 'OPT (F-1 extension) photo: 2×2 inch (600×600 px), USCIS white background.' },
+  'global entry photo requirements': { category: 'visa', w: 600, h: 600, ratio: '1:1', description: 'Global Entry enrollment photo: 2×2 inch (600×600 px).' },
+  'tsa precheck photo size': { category: 'visa', w: 600, h: 600, ratio: '1:1', description: 'TSA PreCheck photo: standard 2×2 inch (600×600 px).' },
+  'nexus card photo requirements': { category: 'visa', w: 600, h: 600, ratio: '1:1', description: 'NEXUS card photo: 2×2 inch (600×600 px), white or off-white background.' },
+  // US professional license / exam photos — 2×2 inch
+  'bar exam application photo size': { category: 'education', w: 600, h: 600, ratio: '1:1', description: 'Bar exam application photo: typically 2×2 inch (600×600 px). Confirm your state bar.' },
+  'real estate license exam photo': { category: 'education', w: 600, h: 600, ratio: '1:1', description: 'Real estate license exam photo: 2×2 inch (600×600 px). Check your state licensing board.' },
+  'nclex registration photo size': { category: 'education', w: 600, h: 600, ratio: '1:1', description: 'NCLEX registration photo: 2×2 inch (600×600 px).' },
+  'usmle photo requirements': { category: 'education', w: 600, h: 600, ratio: '1:1', description: 'USMLE / NBME registration photo: 2×2 inch (600×600 px), plain white background.' },
+  'cpa exam registration photo': { category: 'education', w: 600, h: 600, ratio: '1:1', description: 'CPA exam (NASBA) registration photo: 2×2 inch (600×600 px).' },
+  'cfa exam photo requirements': { category: 'education', w: 600, h: 600, ratio: '1:1', description: 'CFA exam registration photo: 2×2 inch (600×600 px), plain background.' },
+  'lsat photo requirements': { category: 'education', w: 600, h: 600, ratio: '1:1', description: 'LSAT registration photo: 2×2 inch (600×600 px), LSAC requirements.' },
+  'mcat application photo size': { category: 'education', w: 600, h: 600, ratio: '1:1', description: 'MCAT (AMCAS) application photo: check AAMC requirements.' },
+  'gre registration photo requirements': { category: 'education', w: 600, h: 600, ratio: '1:1', description: 'GRE registration photo: ETS-style ID photo, 2×2 inch (600×600 px).' },
+  'gmat photo requirements': { category: 'education', w: 180, h: 240, ratio: '3:4', description: 'GMAT profile photo workspace: 180×240 px.' },
+  'sat registration photo size': { category: 'education', w: 600, h: 600, ratio: '1:1', description: 'SAT registration photo: College Board ID photo requirements.' },
+  'common app photo upload size': { category: 'education', w: 600, h: 600, ratio: '1:1', description: 'Common App photo: check your school portal size requirements.' },
+  // US document scans — letter-size at 200 DPI
+  'compress image for tax documents': { category: 'document', w: 1700, h: 2200, ratio: '17:22', description: 'Tax document scan: 1700×2200 px (US Letter at 200 DPI). Compress before uploading to TurboTax, H&R Block, or IRS portal.' },
+  'turbotax document upload size': { category: 'document', w: 1700, h: 2200, ratio: '17:22', description: 'TurboTax document upload: letter-size scan, keep under 5 MB.' },
+  'h&r block document upload size': { category: 'document', w: 1700, h: 2200, ratio: '17:22', description: 'H&R Block document scan: US Letter, keep under 5 MB.' },
+  'mortgage application document upload size': { category: 'document', w: 1700, h: 2200, ratio: '17:22', description: 'Mortgage document scan: US Letter at 200 DPI (1700×2200 px), compressed for lender portals.' },
+  'bank statement photo size for mortgage': { category: 'document', w: 1700, h: 2200, ratio: '17:22', description: 'Bank statement for mortgage: scan at 200 DPI (1700×2200 px), under 5 MB.' },
+  'compress pay stub for loan application': { category: 'document', w: 1700, h: 2200, ratio: '17:22', description: 'Pay stub for loan: letter-size scan at 200 DPI, compressed for upload.' },
+  'insurance claim photo upload size': { category: 'document', w: 1200, h: 900, ratio: '4:3', description: 'Insurance claim photo: landscape 1200×900 px works for most claim portals.' },
+  'compress image for court filing': { category: 'document', w: 1700, h: 2200, ratio: '17:22', description: 'Court document scan: US Letter at 200 DPI (1700×2200 px). Check your court filing rules.' },
+  'court document scan upload size': { category: 'document', w: 1700, h: 2200, ratio: '17:22', description: 'Court filing document: letter-size scan, typically under 10 MB per file.' },
+  'legal document photo size for upload': { category: 'document', w: 1700, h: 2200, ratio: '17:22', description: 'Legal document upload: US Letter at 200 DPI scan, compressed for court or law firm portals.' },
+  'fafsa document upload size': { category: 'document', w: 1700, h: 2200, ratio: '17:22', description: 'FAFSA document upload: letter-size scan under 5 MB.' },
+  // US real estate
+  'mls listing photo size requirements': { category: 'marketplace', w: 1600, h: 1200, ratio: '4:3', description: 'MLS listing photo: 1600×1200 px (4:3 landscape), JPEG. Many MLSs require landscape.' },
+  'compress real estate photo for mls': { category: 'marketplace', w: 1600, h: 1200, ratio: '4:3', description: 'Real estate photo for MLS: 1600×1200 px (4:3), JPEG recommended.' },
+  'real estate headshot photo size': { category: 'professional', w: 400, h: 400, ratio: '1:1', description: 'Real estate agent headshot: square 400×400 px minimum for MLS and portal profiles.' },
+  'airbnb listing photo requirements': { category: 'marketplace', w: 1024, h: 683, ratio: '3:2', description: 'Airbnb listing photo: 1024×683 px minimum, 3:2 ratio, JPEG.' },
+  'vrbo photo upload size': { category: 'marketplace', w: 1024, h: 683, ratio: '3:2', description: 'VRBO listing photo: 1024×683 px minimum, JPEG.' },
 };
 
 function normalizeTerm(value: string): string {
@@ -911,10 +968,10 @@ function inferSpecForTerm(term: string): InferredImageSizeSpec {
   const q = normalizeTerm(term);
   if (exactTermSpecs[q]) return exactTermSpecs[q];
 
-  if (/(visa|passport|oci|voter|qid|zairyu|police clearance)/.test(q)) {
+  if (/(visa|passport|oci|voter|qid|zairyu|police clearance|uscis|green card|naturalization|global entry|tsa precheck|nexus card)/.test(q)) {
     return { category: 'visa', w: 600, h: 600, ratio: '1:1', description: 'Document photo workspace. Check the current form rules before final upload.' };
   }
-  if (/(jee|neet|upsc|ssc|rrb|group d|ctet|dsssb|gds|ntpc|ojas|rtps|upsssc|vit|job|resume|cv|journal)/.test(q)) {
+  if (/(jee|neet|upsc|ssc|rrb|group d|ctet|dsssb|gds|ntpc|ojas|rtps|upsssc|vit|job|resume|cv|journal|ibps|sbi po|sbi clerk|rbi grade|lic aao|lic ado|lic assistant|nabard|sebi grade|esic|epfo|irdai|rrb alp|rrb je|rrb sse|rpf|dfccil|afcat|agniveer|crpf|bsf|cisf constable|itbp|assam rifles|coast guard|uppsc|bpsc|mppsc|tnpsc|mpsc|rpsc|wbcs|kpsc|gpsc|opsc|appsc|tspsc|kerala psc|hpsc|jpsc|cgpsc|kvs|nvs|uptet|reet|htet|tntet|maha tet|eamcet|kcet|wbjee|mht cet|bitsat|viteee|fmge|ini cet|jipmer|neet pg|aiims pg|judicial service|high court recruit|police constable|police si|sarathi|e-shram|nsp scholarship|pm kisan|udyam|income tax portal|gst registration|digilocker|aadhaar|epfo uan|nursing license|medical license|nclex|usmle|amcas|npidb|cdl license|faa medical|contractor license|finra|series 7|bar exam|real estate license exam|cpa exam|cfa exam|lsat|mcat|gre|sat registration|common app|act registration|gmat)/.test(q)) {
     return { category: 'education', w: 413, h: 531, ratio: '3:4', description: 'Application photo workspace. Confirm the current exam or portal instructions before final upload.' };
   }
   if (/(shirt|hoodie|hat|koozie|onesie|vinyl)/.test(q)) {
