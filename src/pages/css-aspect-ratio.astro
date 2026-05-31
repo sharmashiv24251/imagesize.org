@@ -3,7 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import Breadcrumb from '../components/ui/Breadcrumb.astro';
 import FAQ from '../components/ui/FAQ.astro';
 import RelatedTools from '../components/ui/RelatedTools.astro';
-import { buildBreadcrumbLD, buildFAQLD, buildSoftwareApplicationLD } from '../lib/seo';
+import { buildBreadcrumbLD, buildFAQLD, buildSoftwareApplicationLD, buildHowToLD } from '../lib/seo';
 
 const title = 'CSS Aspect Ratio Generator';
 const description = 'Generate CSS aspect-ratio rules, responsive boxes, and padding fallback snippets from any width and height. Copy production-ready CSS instantly.';
@@ -34,6 +34,17 @@ const jsonLD = [
     { name: 'Home', url: 'https://imagesize.org' },
     { name: 'CSS Aspect Ratio Generator', url: 'https://imagesize.org/css-aspect-ratio' },
   ]),
+  buildHowToLD(
+    'How to generate CSS aspect-ratio code',
+    'Enter a width and height or pick a common preset to generate production-ready CSS aspect-ratio, responsive wrapper, and padding fallback snippets instantly.',
+    [
+      { name: 'Enter width and height or pick a preset', text: 'Type your ratio values into the width and height fields, or click one of the preset buttons (16:9, 4:3, 1:1, etc.). The output updates immediately.' },
+      { name: 'Preview the aspect ratio shape', text: 'The live preview box on the right shows how the ratio looks visually — useful for checking portrait vs landscape orientations.' },
+      { name: 'Copy the CSS snippet', text: 'Click Copy next to Modern CSS, Responsive Media Wrapper, or Padding Fallback to copy the snippet you need to your clipboard.' },
+      { name: 'Paste into your stylesheet', text: 'Drop the copied snippet into your CSS file. The modern aspect-ratio property works in all current browsers; use the padding fallback for legacy support.' },
+    ],
+    'https://imagesize.org/css-aspect-ratio'
+  ),
 ];
 
 const relatedTools = [

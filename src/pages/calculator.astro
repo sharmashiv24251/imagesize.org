@@ -4,7 +4,7 @@ import Breadcrumb from '../components/ui/Breadcrumb.astro';
 import FAQ from '../components/ui/FAQ.astro';
 import RelatedTools from '../components/ui/RelatedTools.astro';
 import CalculatorIsland from '../components/islands/CalculatorIsland';
-import { buildWebApplicationLD, buildFAQLD, buildBreadcrumbLD } from '../lib/seo';
+import { buildWebApplicationLD, buildFAQLD, buildBreadcrumbLD, buildHowToLD } from '../lib/seo';
 
 const title = 'Aspect Ratio Calculator — Compute, Convert & Compare Ratios Instantly';
 const description = 'Free aspect ratio calculator. Enter width and height for instant ratio detection, or enter a ratio to compute dimensions. Find nearest standard ratios with confidence scores.';
@@ -39,6 +39,17 @@ const jsonLD = [
     { name: 'Home', url: 'https://imagesize.org' },
     { name: 'Calculator', url: 'https://imagesize.org/calculator' },
   ]),
+  buildHowToLD(
+    'How to calculate an aspect ratio',
+    'Enter image dimensions to get the simplified ratio, decimal, orientation, and nearest common matches instantly.',
+    [
+      { name: 'Enter width and height', text: 'Type your image width and height in pixels. The ratio updates on every keystroke.' },
+      { name: 'Read the ratio', text: 'The simplified ratio (e.g. 16:9), decimal value, and orientation are shown immediately below the inputs.' },
+      { name: 'Check nearest common ratios', text: 'The tool compares your ratio against a database of standard ratios and shows the closest matches with confidence scores.' },
+      { name: 'Switch to Ratio → Dimension mode', text: 'To find a missing dimension, switch modes, enter your target ratio and one known side, and the calculator computes the other.' },
+    ],
+    'https://imagesize.org/calculator'
+  ),
 ];
 
 const relatedTools = [

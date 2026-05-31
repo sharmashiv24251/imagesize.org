@@ -4,7 +4,7 @@ import Breadcrumb from '../components/ui/Breadcrumb.astro';
 import FAQ from '../components/ui/FAQ.astro';
 import RelatedTools from '../components/ui/RelatedTools.astro';
 import ImageAnalyzerIsland from '../components/islands/ImageAnalyzerIsland';
-import { buildWebApplicationLD, buildFAQLD, buildBreadcrumbLD } from '../lib/seo';
+import { buildWebApplicationLD, buildFAQLD, buildBreadcrumbLD, buildHowToLD } from '../lib/seo';
 
 const title = 'Image Size Analyzer — Check Dimensions, Ratio & File Size';
 const description = 'Upload any image to instantly detect its dimensions, file size, aspect ratio, and compatibility with LinkedIn, Twitter/X, Google Forms, YouTube, Instagram, and more. 100% client-side.';
@@ -35,6 +35,17 @@ const jsonLD = [
     { name: 'Home', url: 'https://imagesize.org' },
     { name: 'Image Analyzer', url: 'https://imagesize.org/image' },
   ]),
+  buildHowToLD(
+    'How to check image dimensions and platform compatibility',
+    'Upload any image to instantly see its pixel dimensions, aspect ratio, file size, and compatibility with major social media platforms.',
+    [
+      { name: 'Upload your image', text: 'Drop an image onto the analyzer or click to browse. Your file never leaves your browser.' },
+      { name: 'Read dimensions and ratio', text: 'The tool instantly shows width, height, file size, simplified aspect ratio, and orientation.' },
+      { name: 'Check the platform compatibility grid', text: 'See whether your image matches (✅), is close enough to crop (🟡), or is the wrong shape (❌) for YouTube, Instagram, LinkedIn, Twitter/X, TikTok, and more.' },
+      { name: 'Fix with one click', text: 'Click "Fix" next to any platform to open the Crop & Resize tool with the correct target dimensions pre-filled.' },
+    ],
+    'https://imagesize.org/image'
+  ),
 ];
 
 const relatedTools = [
