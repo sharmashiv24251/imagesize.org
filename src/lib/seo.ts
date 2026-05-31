@@ -83,8 +83,8 @@ export function buildWebApplicationLD(name: string, description: string, url: st
     name,
     description,
     url,
-    applicationCategory: 'UtilityApplication',
-    operatingSystem: 'All',
+    applicationCategory: 'MultimediaApplication',
+    operatingSystem: 'Web Browser',
     offers: {
       '@type': 'Offer',
       price: '0',

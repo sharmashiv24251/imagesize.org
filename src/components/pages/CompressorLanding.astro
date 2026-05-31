@@ -148,6 +148,16 @@ const relatedTools = [
           <span>Need the exact crop dimensions first? → <span class="text-teal-400">{page.audience} image size guide</span></span>
         </a>
       )}
+
+      {/* Exam / Document cross-link: most portals also require exact pixel dimensions */}
+      {(page.audience === 'Exam' || page.audience === 'Document') && page.platformSizeHref && (
+        <p class="mt-3 text-xs text-warning/80">
+          ⚠ Most exam and government portals also require exact pixel dimensions — not just a small file size.
+          <a href={page.platformSizeHref} class="text-teal-400 hover:text-teal-300 ml-1">
+            Crop your photo to the correct size first →
+          </a>
+        </p>
+      )}
     </div>
 
     <section class="mb-12">

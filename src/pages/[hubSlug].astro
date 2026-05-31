@@ -1,0 +1,210 @@
+---
+/**
+ * Platform hub page — lists every image format for one platform with one-click
+ * resize links, cross-links to the compress page, and full structured data.
+ */
+import Layout from '../layouts/Layout.astro';
+import Breadcrumb from '../components/ui/Breadcrumb.astro';
+import { buildBreadcrumbLD, buildFAQLD, buildWebApplicationLD } from '../lib/seo';
+import { absoluteUrl, site } from '../lib/site';
+import { hubPages, type HubPage } from '../lib/hubPages';
+
+export function getStaticPaths() {
+  return hubPages.map((page) => ({
+    params: { hubSlug: page.slug },
+    props: { page },
+  }));
+}
+
+interface Props {
+  page: HubPage;
+}
+
+const { page } = Astro.props;
+const canonicalUrl = absoluteUrl(`/${page.slug}`);
+
+// ─── FAQ builder ──────────────────────────────────────────────────────────────
+const faqs = [
+  {
+    question: `What are the ${page.platform} image sizes?`,
+    answer: `${page.platform} supports ${page.formats.length} main image formats: ${page.formats.map((f) => `<strong>${f.name}</strong> (${f.w}×${f.h} px, ${f.ratio})`).join(', ')}. Each format is used in a different placement — see the table above for details and one-click resize links.`,
+  },
+  {
+    question: `What is the best image size for ${page.platform}?`,
+    answer: `The best ${page.platform} image size depends on where you are posting. For feed posts use <strong>${page.formats[0].w}×${page.formats[0].h} px</strong> (${page.formats[0].ratio}). For full-screen vertical formats like stories, use <strong>1080×1920 px</strong> (9:16). Always upload at the recommended resolution to avoid blurry or cropped results.`,
+  },
+  {
+    question: `How do I resize an image for ${page.platform}?`,
+    answer: `Click any "Resize" button in the table above. The tool opens with the correct dimensions pre-loaded. Drop your image in, choose Crop, Fit, or Stretch, then export as JPG, PNG, or WebP — everything runs locally in your browser.`,
+  },
+  {
+    question: `Does ${page.platform} compress images?`,
+    answer: `Yes — ${page.platform} re-encodes images on upload. To keep the sharpest result, upload at the exact recommended pixel dimensions and keep your file under the platform's size limit.${page.compressHref ? ` Use our <a href="${page.compressHref}" class="text-teal-400 hover:text-teal-300">free ${page.platform} image compressor</a> to reduce file size before uploading.` : ''}`,
+  },
+  {
+    question: `What file format should I use for ${page.platform} images?`,
+    answer: `JPG is the safest choice for photos — it keeps file sizes small and is accepted by every placement. Use PNG when your image contains text, logos, or transparent areas where lossless edges matter. WebP is accepted by most modern platforms and produces the smallest file sizes.`,
+  },
+];
+
+const jsonLD = [
+  buildWebApplicationLD(page.h1, page.description, canonicalUrl),
+  buildFAQLD(faqs),
+  buildBreadcrumbLD([
+    { name: 'Home', url: site.url },
+    { name: page.h1, url: canonicalUrl },
+  ]),
+];
+---
+
+<Layout title={page.title} description={page.description} canonicalUrl={canonicalUrl} jsonLD={jsonLD} tier={1}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <Breadcrumb items={[
+      { name: 'Home', url: '/' },
+      { name: page.h1, url: `/${page.slug}` },
+    ]} />
+
+    <div class="mb-10 max-w-3xl">
+      <div class="flex flex-wrap items-center gap-2 mb-3">
+        <span class="text-[11px] px-2 py-1 rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/20">{page.platform}</span>
+        <span class="text-[11px] px-2 py-1 rounded-full bg-surface border border-border-dark text-text-muted">{page.formats.length} formats</span>
+        <span class="text-[11px] px-2 py-1 rounded-full bg-surface border border-border-dark text-text-muted">No upload</span>
+      </div>
+      <h1 class="text-3xl sm:text-4xl font-bold text-text-primary tracking-tight mb-3">
+        {page.h1}
+      </h1>
+      <p class="text-text-muted leading-relaxed">
+        {page.intro}
+      </p>
+    </div>
+
+    <!-- Format grid / table -->
+    <section class="mb-12">
+      <h2 class="text-xl font-semibold text-text-primary mb-5">All {page.platform} Image Formats</h2>
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {page.formats.map((fmt) => (
+          <div class="bg-surface rounded-xl border border-border-dark/50 p-4 flex flex-col gap-3 hover:border-teal-500/30 transition-colors group">
+            <div>
+              <h3 class="text-sm font-semibold text-text-primary mb-0.5">{fmt.name}</h3>
+              <p class="text-xs text-text-muted leading-relaxed">{fmt.description}</p>
+            </div>
+            <div class="flex items-center gap-2 mt-auto">
+              <span class="font-mono text-xs text-text-muted bg-bg px-2 py-1 rounded border border-border-dark">{fmt.w}×{fmt.h}</span>
+              <span class="font-mono text-xs text-text-muted">{fmt.ratio}</span>
+            </div>
+            <a
+              href={`/${fmt.slug}`}
+              class="mt-1 flex items-center justify-center gap-2 rounded-lg bg-teal-500/10 border border-teal-500/20 px-3 py-2 text-xs text-teal-300 hover:bg-teal-500/20 hover:border-teal-500/40 transition-colors"
+              id={`hub-resize-${fmt.slug}`}
+            >
+              <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+              </svg>
+              Resize to {fmt.w}×{fmt.h}
+            </a>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- Specs table (accessible alternative) -->
+    <section class="mb-12 max-w-4xl">
+      <h2 class="text-xl font-semibold text-text-primary mb-4">{page.platform} Image Size Cheat Sheet</h2>
+      <div class="overflow-x-auto rounded-xl border border-border-dark/50">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-border-dark/50 bg-surface">
+              <th class="text-left px-4 py-3 text-xs text-text-muted uppercase tracking-wider font-medium">Format</th>
+              <th class="text-left px-4 py-3 text-xs text-text-muted uppercase tracking-wider font-medium">Width</th>
+              <th class="text-left px-4 py-3 text-xs text-text-muted uppercase tracking-wider font-medium">Height</th>
+              <th class="text-left px-4 py-3 text-xs text-text-muted uppercase tracking-wider font-medium">Ratio</th>
+              <th class="px-4 py-3"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {page.formats.map((fmt, i) => (
+              <tr class={`border-b border-border-dark/30 hover:bg-surface transition-colors ${i % 2 === 0 ? 'bg-bg' : 'bg-surface/50'}`}>
+                <td class="px-4 py-3 text-text-primary font-medium">{fmt.name}</td>
+                <td class="px-4 py-3 font-mono text-text-muted">{fmt.w} px</td>
+                <td class="px-4 py-3 font-mono text-text-muted">{fmt.h} px</td>
+                <td class="px-4 py-3 font-mono text-text-muted">{fmt.ratio}</td>
+                <td class="px-4 py-3 text-right">
+                  <a
+                    href={`/${fmt.slug}`}
+                    class="text-xs text-teal-400 hover:text-teal-300 transition-colors"
+                  >
+                    Resize →
+                  </a>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Cross-link: compress page -->
+    {page.compressHref && (
+      <div class="max-w-3xl mx-auto mb-12">
+        <a
+          href={page.compressHref}
+          class="flex items-center gap-3 rounded-xl border border-teal-500/25 bg-teal-500/5 px-4 py-4 text-sm text-teal-300 hover:bg-teal-500/10 hover:border-teal-500/40 transition-colors group"
+          id={`hub-compress-cta-${page.slug}`}
+        >
+          <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1-4l-3 3m0 0l-3-3m3 3V4" />
+          </svg>
+          <span>
+            <span class="font-medium">After resizing, need to reduce file size?</span>
+            <span class="text-teal-400/70 ml-1">→ Compress images for {page.platform}</span>
+          </span>
+          <svg class="w-4 h-4 ml-auto opacity-50 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path d="M9 18l6-6-6-6" />
+          </svg>
+        </a>
+      </div>
+    )}
+
+    <!-- FAQ section -->
+    <section class="max-w-3xl mx-auto mb-12">
+      <h2 class="text-xl font-semibold text-text-primary mb-4">Frequently Asked Questions</h2>
+      <div class="space-y-4">
+        {faqs.map((faq, i) => (
+          <details
+            class="group bg-surface rounded-xl border border-border-dark/50 overflow-hidden"
+            id={`hub-faq-${i}`}
+          >
+            <summary class="flex cursor-pointer items-center justify-between px-4 py-3 text-sm font-medium text-text-primary select-none hover:text-teal-300 transition-colors list-none">
+              <span>{faq.question}</span>
+              <svg class="w-4 h-4 shrink-0 text-text-muted transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <div class="px-4 pb-4 pt-1 text-sm text-text-muted leading-relaxed" set:html={faq.answer} />
+          </details>
+        ))}
+      </div>
+    </section>
+
+    <!-- Related hub pages -->
+    <section class="max-w-3xl mx-auto mb-8">
+      <h2 class="text-xl font-semibold text-text-primary mb-4">Other Platform Size Guides</h2>
+      <div class="flex flex-wrap gap-2">
+        {hubPages
+          .filter((h) => h.slug !== page.slug)
+          .map((h) => (
+            <a
+              href={`/${h.slug}`}
+              class="text-[11px] px-3 py-1.5 rounded-full bg-surface border border-border-dark text-text-muted hover:text-teal-300 hover:border-teal-500/30 transition-colors"
+            >
+              {h.platform} sizes
+            </a>
+          ))}
+      </div>
+    </section>
+
+    <div class="max-w-3xl mx-auto">
+      <p class="text-xs text-text-muted/40">Last updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+    </div>
+  </div>
+</Layout>

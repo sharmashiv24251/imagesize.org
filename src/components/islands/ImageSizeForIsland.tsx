@@ -129,6 +129,9 @@ export default function ImageSizeForIsland({ options }: ImageSizeForIslandProps)
   const leading = query.trim() ? query.trim() : 'linkedin post';
   const highlightQuery = normalizeSearchInput(query);
 
+  const VISIBLE_ROWS = 10;
+  const ROW_HEIGHT = 72;
+
   return (
     <div class="space-y-5">
       <div class="rounded-xl border border-border-dark/70 bg-surface overflow-hidden">
@@ -167,17 +170,21 @@ export default function ImageSizeForIsland({ options }: ImageSizeForIslandProps)
           ))}
         </div>
 
-        <div class="divide-y divide-border-dark/40">
+        <div
+          class="divide-y divide-border-dark/40 overflow-y-auto"
+          style={{ maxHeight: `${VISIBLE_ROWS * ROW_HEIGHT}px`, scrollBehavior: 'smooth' }}
+        >
           {shown.length > 0 ? (
             shown.map((item) => (
               <a
                 href={item.href}
-                class="group grid grid-cols-[auto_minmax(0,1fr)] sm:grid-cols-[auto_minmax(0,1fr)_auto] gap-3 px-4 sm:px-5 py-3.5 hover:bg-surface-2/35 transition-colors"
+                class="group grid grid-cols-[auto_minmax(0,1fr)] sm:grid-cols-[auto_minmax(0,1fr)_auto] gap-3 px-4 sm:px-5 hover:bg-surface-2/35 transition-colors"
+                style={{ minHeight: `${ROW_HEIGHT}px`, display: 'grid', alignItems: 'center' }}
               >
                 <div class="w-8 h-8 rounded-lg text-text-muted group-hover:text-teal-400 flex items-center justify-center">
                   <SearchIcon />
                 </div>
-                <div class="min-w-0">
+                <div class="min-w-0 py-3">
                   <div class="text-xl sm:text-2xl text-text-primary tracking-tight">
                     <span class="text-text-muted">image size for </span>{highlightedTerm(item.term, highlightQuery)}
                   </div>
@@ -197,7 +204,7 @@ export default function ImageSizeForIsland({ options }: ImageSizeForIslandProps)
             ))
           ) : (
             <div class="px-5 py-12 text-center">
-              <p class="text-text-primary font-medium">No exact match for “{leading}”.</p>
+              <p class="text-text-primary font-medium">No exact match for "{leading}".</p>
               <p class="text-sm text-text-muted mt-1">Try a platform, document, paper size, social post, or exact dimension.</p>
               <a href="/crop-and-resize" class="inline-flex mt-4 px-4 py-2 rounded-lg bg-teal-500 text-white text-sm font-medium hover:bg-teal-600 transition-colors">
                 Open custom crop and resize
@@ -208,8 +215,8 @@ export default function ImageSizeForIsland({ options }: ImageSizeForIslandProps)
       </div>
 
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-text-muted">
-        <p>Showing {shown.length} of {filtered.length} matches from {options.length} total image-size intents.</p>
-        <p>Tip: paste full searches too, like “image size of passport” or “image size for a4 paper”.</p>
+        <p>{shown.length} match{shown.length !== 1 ? 'es' : ''} · scroll inside the list to see all.</p>
+        <p>Tip: paste full searches too, like "image size of passport" or "image size for a4 paper".</p>
       </div>
     </div>
   );
