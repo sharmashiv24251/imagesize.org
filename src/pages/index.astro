@@ -1,12 +1,13 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import CalculatorIsland from '../components/islands/CalculatorIsland';
-import { buildWebApplicationLD, buildBreadcrumbLD } from '../lib/seo';
+import { buildWebApplicationLD, buildBreadcrumbLD, buildWebSiteLD } from '../lib/seo';
 
 const title = 'Aspect Ratio Calculator — Free Tool for Developers & Designers';
 const description = 'The fastest, cleanest aspect ratio calculator on the web. Instantly compute ratios, find nearest matches, analyze images, and crop to any dimension. 100% client-side, no uploads.';
 
 const jsonLD = [
+  buildWebSiteLD(),
   buildWebApplicationLD(
     'Aspect Ratio Calculator',
     description,
@@ -36,6 +37,13 @@ const tools = [
     description: 'Crop, pad, or letterbox images to any ratio. Live preview, instant export.',
     href: '/crop',
     icon: '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M6.13 1L6 16a2 2 0 002 2h15"/><path d="M1 6.13L16 6a2 2 0 012 2v15"/></svg>',
+    hero: true,
+  },
+  {
+    title: 'Resize',
+    description: 'Resize to exact pixel dimensions or platform presets. Crop, pad, or stretch to fit.',
+    href: '/resize',
+    icon: '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>',
     hero: true,
   },
 ];
@@ -129,7 +137,7 @@ const ratioCards = [
   <!-- Tools Grid -->
   <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
     <h2 class="text-xl font-semibold text-text-primary mb-6">Tools</h2>
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {tools.map((tool) => (
         <a
           href={tool.href}

@@ -10,7 +10,14 @@ export default defineConfig({
   integrations: [
     preact({ compat: true }),
     sitemap({
-      filter: (page) => !page.includes('/convert/'),
+      filter: (page) => {
+        // Exclude tier-3 programmatic pages from sitemap
+        const excludePatterns = [
+          '/convert/',    // Tier 3: programmatic conversion pages
+          '/devices/',    // Tier 3: individual device pages (until promoted)
+        ];
+        return !excludePatterns.some((pattern) => page.includes(pattern));
+      },
     }),
   ],
   vite: {

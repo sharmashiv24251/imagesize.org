@@ -1,5 +1,7 @@
 ---
 import '../styles/global.css';
+import type { IndexingTier } from '../lib/seo';
+import { getRobotsMeta } from '../lib/seo';
 
 export interface Props {
   title: string;
@@ -7,6 +9,9 @@ export interface Props {
   canonicalUrl?: string;
   ogImage?: string;
   jsonLD?: object[];
+  /** Indexing tier: 1 = hand-quality, 2 = substantive, 3 = programmatic (noindex) */
+  tier?: IndexingTier;
+  /** Override noindex directly (legacy support) */
   noindex?: boolean;
 }
 
@@ -17,11 +22,15 @@ const {
   // TODO: ADD OG IMAGE — generate proper OG images per page
   ogImage,
   jsonLD = [],
+  tier = 1,
   noindex = false,
 } = Astro.props;
 
 const siteName = 'aspectratio.dev';
 const fullTitle = title.includes(siteName) ? title : `${title} — ${siteName}`;
+
+// Determine robots meta from tier system (or explicit noindex override)
+const robotsMeta = noindex ? 'noindex,follow' : getRobotsMeta(tier);
 ---
 
 <!DOCTYPE html>
@@ -32,7 +41,7 @@ const fullTitle = title.includes(siteName) ? title : `${title} — ${siteName}`;
   <title>{fullTitle}</title>
   <meta name="description" content={description} />
   <link rel="canonical" href={canonicalUrl} />
-  {noindex && <meta name="robots" content="noindex,follow" />}
+  {robotsMeta && <meta name="robots" content={robotsMeta} />}
 
   <!-- OG / Social -->
   <meta property="og:type" content="website" />
@@ -47,6 +56,9 @@ const fullTitle = title.includes(siteName) ? title : `${title} — ${siteName}`;
 
   <!-- Favicon -->
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+  <!-- Theme Color (mobile browser chrome) -->
+  <meta name="theme-color" content="#0E1015" />
 
   <!-- JSON-LD -->
   {jsonLD.map((ld) => (
@@ -71,6 +83,7 @@ const fullTitle = title.includes(siteName) ? title : `${title} — ${siteName}`;
           <a href="/calculator" class="px-3 py-2 text-sm text-text-muted hover:text-text-primary hover:bg-surface rounded-md transition-all duration-150" id="nav-calculator">Calculator</a>
           <a href="/image" class="px-3 py-2 text-sm text-text-muted hover:text-text-primary hover:bg-surface rounded-md transition-all duration-150" id="nav-image">Image Analyzer</a>
           <a href="/crop" class="px-3 py-2 text-sm text-text-muted hover:text-text-primary hover:bg-surface rounded-md transition-all duration-150" id="nav-crop">Crop & Resize</a>
+          <a href="/resize" class="px-3 py-2 text-sm text-text-muted hover:text-text-primary hover:bg-surface rounded-md transition-all duration-150" id="nav-resize">Resize</a>
         </div>
         <div class="flex items-center gap-3">
           <!-- Mobile menu button -->
@@ -91,6 +104,7 @@ const fullTitle = title.includes(siteName) ? title : `${title} — ${siteName}`;
           <a href="/calculator" class="block px-3 py-2 text-sm text-text-muted hover:text-text-primary hover:bg-surface rounded-md transition-all">Calculator</a>
           <a href="/image" class="block px-3 py-2 text-sm text-text-muted hover:text-text-primary hover:bg-surface rounded-md transition-all">Image Analyzer</a>
           <a href="/crop" class="block px-3 py-2 text-sm text-text-muted hover:text-text-primary hover:bg-surface rounded-md transition-all">Crop & Resize</a>
+          <a href="/resize" class="block px-3 py-2 text-sm text-text-muted hover:text-text-primary hover:bg-surface rounded-md transition-all">Resize</a>
         </div>
       </div>
     </header>
@@ -109,6 +123,7 @@ const fullTitle = title.includes(siteName) ? title : `${title} — ${siteName}`;
             <li><a href="/calculator" class="text-sm text-text-muted hover:text-teal-400 transition-colors">Calculator</a></li>
             <li><a href="/image" class="text-sm text-text-muted hover:text-teal-400 transition-colors">Image Analyzer</a></li>
             <li><a href="/crop" class="text-sm text-text-muted hover:text-teal-400 transition-colors">Crop & Resize</a></li>
+            <li><a href="/resize" class="text-sm text-text-muted hover:text-teal-400 transition-colors">Resize</a></li>
           </ul>
         </div>
         <div>
