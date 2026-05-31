@@ -38,6 +38,10 @@ export interface ImageSizeIntentPage {
   sourceLabel?: string;
   sourceUrl?: string;
   caveat?: string;
+  /** Slug of the corresponding compress page, e.g. 'compress-image-for-linkedin' */
+  compressHref?: string;
+  /** Extra FAQs specific to this platform (merged into the page FAQ list) */
+  extraFAQs?: { question: string; answer: string }[];
 }
 
 export function slugify(value: string): string {
@@ -262,10 +266,21 @@ export const imageSizeIntentPages: ImageSizeIntentPage[] = [
     keyword: 'linkedin post image size',
     sourceLabel: 'LinkedIn single image ad specs',
     sourceUrl: 'https://www.linkedin.com/help/linkedin/answer/a426534/single-image-ads-advertising-specifications?intendedLocale=und&lang=en-us',
+    compressHref: '/compress-image-for-linkedin',
     relatedFormats: [
       findFormat('LinkedIn', 'Post Image'),
       { platform: 'LinkedIn', name: 'Square Post', w: 1200, h: 1200, ratio: '1:1', category: 'professional' },
       { platform: 'LinkedIn', name: 'Vertical Post', w: 720, h: 900, ratio: '4:5', category: 'professional' },
+    ],
+    extraFAQs: [
+      {
+        question: 'What size is a LinkedIn post image?',
+        answer: 'The recommended LinkedIn post image size is <strong>1200×628 pixels</strong> for a landscape feed post, giving a <strong>1.91:1</strong> aspect ratio. Square posts can use 1200×1200 px, and vertical posts work at 720×900 px.',
+      },
+      {
+        question: 'Does LinkedIn compress images?',
+        answer: 'LinkedIn may recompress images over 5 MB. For the sharpest result, keep your 1200×628 px post image under 5 MB — ideally under 1 MB — before uploading.',
+      },
     ],
   },
   {
@@ -278,9 +293,20 @@ export const imageSizeIntentPages: ImageSizeIntentPage[] = [
     keyword: 'linkedin cover image size',
     sourceLabel: 'LinkedIn profile and Page image specs',
     sourceUrl: 'https://www.linkedin.com/help/linkedin/answer/a549049',
+    compressHref: '/compress-image-for-linkedin',
     relatedFormats: [
       findFormat('LinkedIn', 'Personal Header'),
       { platform: 'LinkedIn', name: 'Page Cover', w: 4200, h: 700, ratio: '6:1', category: 'professional', sourceUrl: 'https://www.linkedin.com/help/linkedin/answer/a563309/image-specifications-for-your-linkedin-pages-and-career-pages?lang=en' },
+    ],
+    extraFAQs: [
+      {
+        question: 'What is the LinkedIn cover photo size?',
+        answer: 'The LinkedIn personal profile cover (background photo) is <strong>1584×396 pixels</strong> at a <strong>4:1</strong> ratio. LinkedIn Page covers use <strong>4200×700 px</strong> (6:1 ratio). Both should be under 8 MB.',
+      },
+      {
+        question: 'Does LinkedIn crop my cover photo?',
+        answer: 'Yes — LinkedIn crops the profile cover on different screen sizes. Keep your logo or key content centred and avoid placing anything important within 60 px of any edge.',
+      },
     ],
   },
   {
@@ -293,7 +319,17 @@ export const imageSizeIntentPages: ImageSizeIntentPage[] = [
     keyword: 'google forms header image size',
     sourceLabel: 'Google Forms header workflow',
     sourceUrl: 'https://support.google.com/docs/answer/145737?hl=en-en',
-    caveat: 'Google Forms may crop or reposition the header depending on theme and screen size, so keep key text and logos near the center.',
+    caveat: 'Google Forms may crop or reposition the header depending on theme and screen size, so keep key text and logos near the centre.',
+    extraFAQs: [
+      {
+        question: 'What is the Google Forms header image size?',
+        answer: 'Google Forms does not enforce a strict required pixel size, but a practical template is <strong>1600×400 pixels</strong> at a <strong>4:1</strong> aspect ratio. Google automatically crops and repositions the header, so keep important content centred.',
+      },
+      {
+        question: 'What format should I use for a Google Forms header?',
+        answer: 'Google Forms accepts JPG, PNG, and GIF. Use JPG for photos and PNG for graphics with text or logos to keep edges sharp after Google applies its own crop.',
+      },
+    ],
   },
   {
     slug: 'twitter-image-size',
@@ -306,10 +342,21 @@ export const imageSizeIntentPages: ImageSizeIntentPage[] = [
     keyword: 'twitter image size',
     sourceLabel: 'X profile and header image help',
     sourceUrl: 'https://help.x.com/en/managing-your-account/common-issues-when-uploading-profile-photo',
+    compressHref: '/compress-image-for-twitter',
     relatedFormats: [
       findFormat('Twitter/X', 'Post Image'),
       findFormat('Twitter/X', 'Header / Banner'),
       findFormat('Twitter/X', 'Profile Photo'),
+    ],
+    extraFAQs: [
+      {
+        question: 'What size are Twitter / X post images?',
+        answer: 'The recommended Twitter / X post image size is <strong>1200×675 pixels</strong> at a <strong>16:9</strong> ratio. Images must be under 5 MB (JPG or PNG) or under 5 MB (GIF). Twitter/X displays them at up to 1200 px wide in the timeline.',
+      },
+      {
+        question: 'What is the Twitter / X header image size?',
+        answer: 'The Twitter / X header (banner) is <strong>1500×500 pixels</strong> at a <strong>3:1</strong> ratio. Note that roughly 60 px at the top and bottom may be cropped on some screens, so keep your username and key content in the centre strip.',
+      },
     ],
   },
 ];
