@@ -166,25 +166,79 @@ const relatedLimit = 10;
 const relatedStart = Math.max(0, Math.min(alphabeticalCenter - Math.floor(relatedLimit / 2), alphabeticalCandidates.length - relatedLimit));
 const alphabeticalRelatedLinks = alphabeticalCandidates.slice(relatedStart, relatedStart + relatedLimit);
 
-const faqs = [
+// ─── Programmatic FAQ builder ────────────────────────────────────────────────
+// Generates data-driven questions from the format's dimensions, ratio,
+// orientation, category, DPI, and safe-zone — every page gets unique answers.
+
+const _subject      = pageLabel.replace(/ Size$/, '');          // "LinkedIn Post Image"
+const _subjectLower = _subject.toLowerCase();                   // "linkedin post image"
+const _isPortrait   = format.h > format.w;
+const _isLandscape  = format.w > format.h;
+const _isSquare     = format.w === format.h;
+const _orientation  = _isSquare ? 'square (equal width and height)'
+                    : _isPortrait ? 'vertical / portrait (taller than it is wide)'
+                    : 'horizontal / landscape (wider than it is tall)';
+const _ratioWords   = _isSquare ? 'a 1:1 square ratio'
+                    : `a ${format.ratio} ${_isPortrait ? 'portrait' : 'landscape'} ratio`;
+
+const _formatAdvice: Record<string, string> = {
+  social:         'JPG is the safest choice — every social platform accepts it and it keeps file sizes small. Use PNG when your image contains text overlays, logos, or sharp edges that need lossless detail.',
+  professional:   'JPG works reliably for professional-network uploads. Use PNG for images with text, transparent areas, or logos where sharp edges matter. Keep the file under 5 MB for instant uploading.',
+  video:          'JPG or PNG both work well for thumbnails and channel art. PNG preserves sharpness on text and icons; JPG produces smaller files for photos. Most platforms now accept WebP too.',
+  print:          'Use PNG or TIFF for print-ready output — lossless formats preserve maximum sharpness at high DPI. JPG is acceptable for web previews but degrades slightly on each re-save.',
+  cinema:         'For cinema-grade exports use TIFF or uncompressed EXR / DPX. JPG compression introduces artefacts that are unacceptable in mastering workflows.',
+  'display-ads':  'JPG works for photo-based ads. Use PNG for ads that contain text, sharp logos, or transparent backgrounds, and keep file sizes within the ad-network limit.',
+};
+const _formatTip = _formatAdvice[format.category]
+  ?? 'JPG is widely accepted for most destinations. Use PNG for transparent backgrounds and WebP for optimised web exports.';
+
+const _wrongSizeNote = _isSquare
+  ? `${format.platform} will scale or crop non-square images to fit the ${_subject.toLowerCase()} space, which can cut off content or add unwanted padding.`
+  : `${format.platform} will scale or crop images that do not match ${displaySize} px, which often causes blurry results, unexpected cropping, or black or white bars around the image.`;
+
+interface _FAQ { question: string; answer: string; }
+
+const _autoFAQs: _FAQ[] = [
   {
-    question: intentPage ? `What is the ${intentPage.keyword}?` : `What is the ${format.platform} ${format.name} size?`,
-    answer: intentPage
-      ? `The main ${intentPage.keyword} preset on this page is <strong>${displaySize} pixels</strong>, which uses a <strong>${format.ratio}</strong> aspect ratio.`
-      : `The recommended ${format.platform} ${format.name} size is <strong>${displaySize} pixels</strong>, which uses a <strong>${format.ratio}</strong> aspect ratio.`,
+    question: `What is the recommended size for ${_subjectLower}?`,
+    answer: `The recommended ${_subjectLower} is <strong>${displaySize} pixels</strong> with <strong>${_ratioWords}</strong>. Uploading at this exact resolution lets ${format.platform} display your image without rescaling, cropping, or quality loss.`,
   },
   {
-    question: `Can I crop an image to ${displaySize} for ${format.platform}?`,
-    answer: `Yes. Use the crop and resize tool on this page, upload your image, then choose Crop, Fit, or Stretch. The target is preloaded to ${displaySize}.`,
+    question: `What is the aspect ratio of ${_subjectLower}?`,
+    answer: `The aspect ratio of ${_subjectLower} is <strong>${format.ratio}</strong> — a ${_orientation}. The canvas is <strong>${format.w} px wide</strong> and <strong>${format.h} px tall</strong>. Every element you place on it will scale proportionally at this ratio across different screen sizes.`,
   },
   {
-    question: 'Should I crop or fit my image?',
-    answer: 'Choose Crop when you want the image to fill the full frame. Choose Fit when you need to keep the full image visible and add padding or blur around it.',
+    question: `How wide should a ${_subjectLower} be?`,
+    answer: `A ${_subjectLower} should be <strong>${format.w} pixels wide</strong> and <strong>${format.h} pixels tall</strong>. ${
+      _isLandscape ? 'The wider-than-tall landscape shape fills the preview area cleanly without letterboxing.'
+      : _isPortrait ? 'The taller-than-wide portrait shape maximises vertical screen space — ideal for mobile feeds.'
+      : 'The equal width and height produce a clean square crop that displays consistently on every device.'
+    }`,
   },
   {
-    question: 'Is the image uploaded to a server?',
-    answer: `No. Image processing runs locally in your browser using Canvas. Your file is not uploaded to ${site.name}.`,
+    question: `What file format should I use for ${_subjectLower}?`,
+    answer: _formatTip,
   },
+  ...( format.dpi ? [{
+    question: `What DPI should ${_subjectLower} be?`,
+    answer: `Set the resolution to <strong>${format.dpi} DPI</strong> for ${_subjectLower}. At ${format.dpi} DPI, the canvas measures <strong>${displaySize} pixels</strong> — enough detail for sharp, print-ready output at the intended physical paper size. Dropping below ${format.dpi} DPI can make text and fine lines appear soft or pixelated when printed.`,
+  }] : [] ),
+  ...( format.safeZone ? [{
+    question: `Does ${format.platform} crop or reposition my image automatically?`,
+    answer: `Yes — ${format.platform} adjusts image display depending on screen size, device, and layout context. ${format.safeZone} Keep important content like text, logos, and faces well away from the outer edges to avoid accidental cropping.`,
+  }] : [] ),
+  {
+    question: `What happens if I upload the wrong size to ${format.platform}?`,
+    answer: `${_wrongSizeNote} Using the tool on this page ensures your export is already ${displaySize} px before you upload, so ${format.platform} has nothing to fix.`,
+  },
+  {
+    question: `Can I resize an image to ${displaySize} without uploading it?`,
+    answer: `Yes — the resize tool on this page runs entirely in your browser using the Canvas API. Your image is <strong>never sent to any server</strong>. Drop your file in, choose Crop, Fit, or Stretch, then export as JPG, PNG, or WebP.`,
+  },
+];
+
+const faqs: _FAQ[] = [
+  ..._autoFAQs,
   ...(intentPage?.extraFAQs ?? []),
 ];
 

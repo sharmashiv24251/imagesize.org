@@ -17,28 +17,58 @@ const { page, canonicalSlug = page.slug } = Astro.props;
 const canonicalUrl = absoluteUrl(`/${canonicalSlug}`);
 const relatedPages = getRelatedCompressorPages(page);
 
+// ─── Programmatic FAQ builder ─────────────────────────────────────────────────
+const _targetLabel = page.targetKb >= 1024
+  ? `${(page.targetKb / 1024 % 1 === 0 ? page.targetKb / 1024 : (page.targetKb / 1024).toFixed(1))} MB`
+  : `${page.targetKb} KB`;
+const _formatUpper = page.format.toUpperCase();
+const _subjectLower = page.h1.toLowerCase();
+const _dimNote = page.maxWidth && page.maxHeight
+  ? ` The tool also caps width at ${page.maxWidth} px and height at ${page.maxHeight} px by default — adjust these if the platform requires exact dimensions.`
+  : '';
+
+const _formatRec = page.format === 'webp'
+  ? 'WebP creates the smallest files for websites and modern apps with minimal visible quality loss. Switch to JPG if the upload form or platform does not accept WebP files.'
+  : page.format === 'png'
+  ? 'PNG uses lossless compression — perfect for graphics with text, logos, or transparency, but it produces larger files than JPG or WebP.'
+  : 'JPG is universally accepted by forms, email clients, social platforms, and exam portals. It balances file size and photo quality better than PNG for most use cases.';
+
+const _qualityNote = page.targetKb <= 50
+  ? 'Very small targets (under 50 KB) may show visible compression artefacts. Start at the default and only reduce further if the upload portal strictly rejects a larger file.'
+  : page.targetKb <= 200
+  ? 'Targets under 200 KB can lose some fine detail in busy images. Try the default first — you can always lower the quality slider if you need to go smaller.'
+  : 'The default quality setting produces a clean result at this target. You can increase the quality slider to prioritise sharpness over file size.';
+
 const faqs = [
   {
-    question: `How do I ${page.h1.toLowerCase()}?`,
-    answer: `Upload an image, keep the preloaded ${page.targetKb} KB target or adjust it, choose ${page.format.toUpperCase()}, then download the compressed result. Processing runs locally in your browser.`,
+    question: `How do I ${_subjectLower}?`,
+    answer: `Drop your image into the tool, keep the preloaded <strong>${_targetLabel} target</strong> or adjust it, choose <strong>${_formatUpper}</strong> as the output format, then click download.${_dimNote} Everything runs locally in your browser — your file never leaves your device.`,
   },
   {
-    question: 'Are my images uploaded?',
-    answer: `No. ${site.name} compresses images locally with browser Canvas. Your image does not leave your device.`,
+    question: `What is the target file size for ${page.audience}?`,
+    answer: page.platformSizeHref
+      ? `This preset targets <strong>${_targetLabel}</strong> — a safe starting point for ${page.audience} uploads. If the platform also requires specific pixel dimensions, use the <a href="${page.platformSizeHref}" class="text-teal-400 hover:text-teal-300">${page.audience} image size guide</a> to crop first, then come back here to compress.`
+      : `This preset targets <strong>${_targetLabel}</strong>. You can drag the quality slider up or down to hit exactly what your upload form requires. The tool shows the final file size in real time before you download.`,
   },
   {
-    question: 'What format should I use?',
-    answer: page.format === 'webp'
-      ? 'WebP usually creates the smallest files for websites and modern apps. Use JPG if the destination form or platform does not accept WebP.'
-      : 'JPG is widely accepted by forms, emails, marketplaces, and exam portals. Use WebP when your destination supports it and you want a smaller file.',
+    question: `What is the best format to ${_subjectLower}?`,
+    answer: _formatRec,
   },
   {
-    question: 'What if the target file size cannot be reached?',
-    answer: 'The tool shows the closest result it can make. To go smaller, reduce max width or height, switch to WebP or JPG, or start with a simpler image.',
+    question: `Will compressing the image reduce its visual quality?`,
+    answer: `Yes — compression always involves a quality trade-off. ${_qualityNote} Switching to WebP instead of JPG at the same quality setting usually produces a noticeably smaller file.`,
+  },
+  {
+    question: `What if the tool cannot reach the ${_targetLabel} target?`,
+    answer: `The tool shows the closest result it can achieve. To go smaller: reduce the max-width or max-height, switch from PNG to JPG or WebP, lower the quality slider, or start with a simpler image that has fewer fine details. Very large source images compressed to very small targets will always lose some clarity.`,
+  },
+  {
+    question: `Is my image uploaded when I use this tool?`,
+    answer: `No — compression happens entirely inside your browser using the Canvas API. Your image is <strong>never uploaded to any server</strong>, never stored, and never shared. It works offline after the page loads.`,
   },
   ...(page.platformSizeHref ? [{
     question: `Do I need to resize my image before compressing it for ${page.audience}?`,
-    answer: `Yes — it helps. Compress works best when the image is already cropped to the right dimensions. Use the <a href="${page.platformSizeHref}" class="text-teal-400 hover:text-teal-300">${page.audience} image size guide</a> to crop first, then compress here.`,
+    answer: `Yes — it helps significantly. Compressing an oversized image wastes bytes on pixels the platform will never display. Crop to the right dimensions first using the <a href="${page.platformSizeHref}" class="text-teal-400 hover:text-teal-300">${page.audience} image size guide</a>, then compress here for the smallest possible file at the sharpest quality.`,
   }] : []),
 ];
 
