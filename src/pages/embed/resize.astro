@@ -1,0 +1,93 @@
+---
+import ResizeIsland from '../../components/islands/ResizeIsland';
+import '../../styles/global.css';
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex,follow" />
+  <title>Embedded Crop & Resize Tool</title>
+  <script is:inline>
+    (() => {
+      const params = new URLSearchParams(window.location.search);
+      const rawAccent = `${params.get('accent') || '0FB5A1'}`.replace('#', '');
+      const accent = /^[0-9a-fA-F]{6}$/.test(rawAccent) ? `#${rawAccent}` : '#0FB5A1';
+      const root = document.documentElement;
+      root.dataset.theme = params.get('theme') === 'light' ? 'light' : 'dark';
+      root.style.setProperty('--color-teal-400', accent);
+      root.style.setProperty('--color-teal-500', accent);
+      root.style.setProperty('--color-teal-600', `color-mix(in srgb, ${accent} 82%, black)`);
+      root.style.setProperty('--color-info', accent);
+
+      if (root.dataset.theme === 'light') {
+        root.style.setProperty('--color-bg', '#FAFAF8');
+        root.style.setProperty('--color-surface', '#F2F1ED');
+        root.style.setProperty('--color-surface-2', '#E5E3DC');
+        root.style.setProperty('--color-border-dark', '#D2CFC4');
+        root.style.setProperty('--color-text-primary', '#44413A');
+        root.style.setProperty('--color-text-muted', '#807C6E');
+      }
+    })();
+  </script>
+  <style>
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background: var(--color-bg);
+      color: var(--color-text-primary);
+    }
+
+    body {
+      padding: 12px;
+      overflow-x: hidden;
+    }
+
+    .embed-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 0 auto 12px;
+      max-width: 64rem;
+      color: var(--color-text-muted);
+      font-size: 12px;
+    }
+
+    .embed-title {
+      color: var(--color-text-primary);
+      font-weight: 650;
+    }
+
+    .embed-link {
+      color: var(--color-teal-400);
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .embed-link:hover {
+      color: var(--color-teal-500);
+    }
+
+    @media (max-width: 640px) {
+      body {
+        padding: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="embed-top">
+    <span class="embed-title">Crop & Resize</span>
+    <a class="embed-link" href="https://aspectratio.dev/resize?utm_source=embed&utm_medium=widget&utm_campaign=resize" target="_blank" rel="noopener">
+      aspectratio.dev
+    </a>
+  </header>
+  <main>
+    <ResizeIsland client:load />
+  </main>
+</body>
+</html>

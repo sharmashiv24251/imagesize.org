@@ -1,0 +1,231 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Breadcrumb from '../components/ui/Breadcrumb.astro';
+import FAQ from '../components/ui/FAQ.astro';
+import RelatedTools from '../components/ui/RelatedTools.astro';
+import ResizeIsland from '../components/islands/ResizeIsland';
+import { buildBreadcrumbLD, buildFAQLD, buildHowToLD, buildWebApplicationLD } from '../lib/seo';
+import { categoryLabels, getPlatformPageFormats, type PlatformPageFormat } from '../lib/platforms';
+
+interface Props {
+  format: PlatformPageFormat;
+  slug: string;
+  canonicalSlug: string;
+}
+
+export function getStaticPaths() {
+  const formats = getPlatformPageFormats();
+  const paths: Array<{ params: { platformSize: string }; props: Props }> = [];
+  const used = new Set<string>();
+
+  for (const format of formats) {
+    const entries = [format.slug, ...format.aliases];
+    for (const slug of entries) {
+      if (used.has(slug)) continue;
+      used.add(slug);
+      paths.push({
+        params: { platformSize: slug },
+        props: { format, slug, canonicalSlug: format.slug },
+      });
+    }
+  }
+
+  return paths;
+}
+
+const { format, slug, canonicalSlug } = Astro.props;
+const isAlias = slug !== canonicalSlug;
+const displaySize = `${format.w}×${format.h}`;
+const category = categoryLabels[format.category];
+const title = `${format.platform} ${format.name} Size: ${displaySize} Pixels`;
+const description = `${format.platform} ${format.name} size is ${displaySize} px with a ${format.ratio} aspect ratio. Upload an image to crop, fit, resize, and export it for this exact format.`;
+const keywords = [
+  `${format.platform} ${format.name} size`,
+  `${format.platform} ${format.name} dimensions`,
+  `${format.platform} ${format.name} resolution`,
+  `${format.platform} ${format.name} pixels`,
+  `${displaySize}`,
+  `${format.ratio} aspect ratio`,
+].join(', ');
+const canonicalUrl = `https://aspectratio.dev/${isAlias ? slug : canonicalSlug}`;
+
+const faqs = [
+  {
+    question: `What is the ${format.platform} ${format.name} size?`,
+    answer: `The recommended ${format.platform} ${format.name} size is <strong>${displaySize} pixels</strong>, which uses a <strong>${format.ratio}</strong> aspect ratio.`,
+  },
+  {
+    question: `Can I crop an image to ${displaySize} for ${format.platform}?`,
+    answer: `Yes. Use the crop and resize tool on this page, upload your image, then choose Crop, Fit, or Stretch. The target is preloaded to ${displaySize}.`,
+  },
+  {
+    question: 'Should I crop or fit my image?',
+    answer: 'Choose Crop when you want the image to fill the full frame. Choose Fit when you need to keep the full image visible and add padding or blur around it.',
+  },
+  {
+    question: 'Is the image uploaded to a server?',
+    answer: 'No. Image processing runs locally in your browser using Canvas. Your file is not uploaded to aspectratio.dev.',
+  },
+];
+
+const jsonLD = [
+  buildWebApplicationLD(title, description, canonicalUrl),
+  buildFAQLD(faqs),
+  buildBreadcrumbLD([
+    { name: 'Home', url: 'https://aspectratio.dev' },
+    { name: `${format.platform} ${format.name} Size`, url: canonicalUrl },
+  ]),
+  buildHowToLD(
+    `How to resize an image for ${format.platform} ${format.name}`,
+    `Resize, crop, or fit an image to ${displaySize} px for ${format.platform} ${format.name}.`,
+    [
+      { name: 'Upload your image', text: 'Drop an image into the tool or click to browse. Processing stays in your browser.' },
+      { name: 'Use the preloaded target', text: `The target size is already set to ${displaySize} px.` },
+      { name: 'Choose crop, fit, or stretch', text: 'Crop fills the frame, Fit preserves the full image with padding, and Stretch forces the exact dimensions.' },
+      { name: 'Export', text: 'Choose PNG, JPG, or WebP, then export the final image.' },
+    ],
+    canonicalUrl
+  ),
+];
+
+const relatedTools = [
+  {
+    title: 'Image Analyzer',
+    description: 'Check an uploaded image against every platform size and jump into crop fixes.',
+    href: '/image',
+    icon: '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>',
+  },
+  {
+    title: 'Aspect Ratio Calculator',
+    description: 'Compute ratios, decimals, orientation, and nearest common matches.',
+    href: `/calculator?w=${format.w}&h=${format.h}`,
+    icon: '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/></svg>',
+  },
+  {
+    title: 'Crop & Resize',
+    description: 'Open the full crop, fit, stretch, and batch export tool.',
+    href: `/resize?tw=${format.w}&th=${format.h}`,
+    icon: '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>',
+  },
+];
+---
+
+<Layout title={title} description={description} keywords={keywords} canonicalUrl={canonicalUrl} jsonLD={jsonLD} tier={2}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <Breadcrumb items={[
+      { name: 'Home', url: '/' },
+      { name: `${format.platform} ${format.name} Size`, url: `/${slug}` },
+    ]} />
+
+    <div class="mb-8 max-w-3xl">
+      <div class="flex flex-wrap items-center gap-2 mb-3">
+        <span class="text-[11px] px-2 py-1 rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/20">{category}</span>
+        {format.dpi && <span class="text-[11px] px-2 py-1 rounded-full bg-warning/10 text-warning border border-warning/20">{format.dpi} DPI</span>}
+        {format.safeZone && <span class="text-[11px] px-2 py-1 rounded-full bg-surface border border-border-dark text-text-muted">Safe zone note</span>}
+      </div>
+      <h1 class="text-3xl sm:text-4xl font-bold text-text-primary tracking-tight mb-3">
+        {format.platform} {format.name} Size
+      </h1>
+      <p class="text-text-muted">
+        Use <strong class="text-text-primary">{displaySize} px</strong> for {format.platform} {format.name}. The target ratio is <strong class="text-text-primary font-mono">{format.ratio}</strong>. Upload your image below to crop, fit, resize, and export it for this exact format.
+      </p>
+    </div>
+
+    <section class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-6 mb-12">
+      <div class="bg-surface rounded-xl border border-border-dark/50 overflow-hidden">
+        <div class="p-4 border-b border-border-dark/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h2 class="text-sm font-semibold text-text-primary">Crop & Resize for {format.platform} {format.name}</h2>
+            <p class="text-xs text-text-muted mt-1">Target preset: {displaySize} px, {format.ratio}</p>
+          </div>
+          <a href={`/resize?tw=${format.w}&th=${format.h}`} class="text-xs text-teal-400 hover:text-teal-300">Open full tool</a>
+        </div>
+        <div class="p-4">
+          <ResizeIsland
+            client:load
+            initialPlatform={format.platform}
+            initialFormat={format.name}
+            initialWidth={format.w}
+            initialHeight={format.h}
+          />
+        </div>
+      </div>
+
+      <aside class="space-y-4">
+        <div class="bg-surface rounded-xl border border-border-dark/50 p-4">
+          <h2 class="text-xs text-text-muted uppercase tracking-wider mb-3">Recommended Specs</h2>
+          <dl class="space-y-3 text-sm">
+            <div class="flex justify-between gap-4">
+              <dt class="text-text-muted">Dimensions</dt>
+              <dd class="font-mono tabular-nums text-text-primary">{displaySize}</dd>
+            </div>
+            <div class="flex justify-between gap-4">
+              <dt class="text-text-muted">Aspect ratio</dt>
+              <dd class="font-mono tabular-nums text-text-primary">{format.ratio}</dd>
+            </div>
+            <div class="flex justify-between gap-4">
+              <dt class="text-text-muted">Platform</dt>
+              <dd class="text-text-primary">{format.platform}</dd>
+            </div>
+            <div class="flex justify-between gap-4">
+              <dt class="text-text-muted">Format</dt>
+              <dd class="text-right text-text-primary">{format.name}</dd>
+            </div>
+            {format.dpi && (
+              <div class="flex justify-between gap-4">
+                <dt class="text-text-muted">Print DPI</dt>
+                <dd class="font-mono tabular-nums text-text-primary">{format.dpi}</dd>
+              </div>
+            )}
+          </dl>
+        </div>
+
+        {format.safeZone && (
+          <div class="bg-teal-500/5 rounded-xl border border-teal-500/20 p-4">
+            <h2 class="text-xs text-teal-400 uppercase tracking-wider mb-2">Safe Zone</h2>
+            <p class="text-sm text-text-muted leading-relaxed">{format.safeZone}</p>
+          </div>
+        )}
+
+        <div class="bg-surface rounded-xl border border-border-dark/50 p-4">
+          <h2 class="text-xs text-text-muted uppercase tracking-wider mb-3">Also Searchable As</h2>
+          <div class="flex flex-wrap gap-2">
+            {[
+              `${format.platform} ${format.name} size`,
+              `${format.platform} ${format.name} resolution`,
+              `${format.platform} ${format.name} dimensions`,
+            ].map((term) => (
+              <span class="text-[11px] px-2 py-1 rounded-full bg-bg border border-border-dark text-text-muted">{term}</span>
+            ))}
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <div class="max-w-3xl mx-auto mb-12">
+      <h2 class="text-xl font-semibold text-text-primary mb-4">{format.platform} {format.name} Dimensions</h2>
+      <div class="text-sm text-text-muted space-y-4 leading-relaxed">
+        <p>
+          The recommended {format.platform} {format.name} resolution is <strong class="text-text-primary">{displaySize} pixels</strong>. This gives the platform the expected source size and reduces surprise cropping, blur, or empty padding.
+        </p>
+        <p>
+          If your source image has a different shape, use Crop to fill the frame or Fit to keep the entire image visible with padding. For print and high-DPI formats, start from the largest source file you have before exporting.
+        </p>
+      </div>
+    </div>
+
+    <div class="max-w-3xl mx-auto mb-12">
+      <h2 class="text-xl font-semibold text-text-primary mb-4">Frequently Asked Questions</h2>
+      <FAQ items={faqs} />
+    </div>
+
+    <div class="max-w-3xl mx-auto mb-8">
+      <h2 class="text-xl font-semibold text-text-primary mb-4">Related Tools</h2>
+      <RelatedTools tools={relatedTools} />
+    </div>
+
+    <div class="max-w-3xl mx-auto">
+      <p class="text-xs text-text-muted/40">Last updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+    </div>
+  </div>
+</Layout>

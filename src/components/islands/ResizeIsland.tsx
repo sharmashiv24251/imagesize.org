@@ -2,10 +2,56 @@ import { useState, useCallback, useRef, useEffect } from 'preact/hooks';
 import { calculateCrop, calculatePadding, simplify, formatRatio } from '../../lib/ratio';
 import { categoryLabels, platformFormats, type PlatformCategory } from '../../lib/platforms';
 
+const pendingImageDbName = 'aspect-ratio-toolkit';
+const pendingImageStoreName = 'handoff';
+const pendingImageKeyPrefix = 'image-analyzer-to-crop';
+
+function openPendingImageDb(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(pendingImageDbName, 1);
+    request.onupgradeneeded = () => {
+      if (!request.result.objectStoreNames.contains(pendingImageStoreName)) {
+        request.result.createObjectStore(pendingImageStoreName);
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function takePendingImageFile(handoffId: string): Promise<File | Blob | null> {
+  const key = `${pendingImageKeyPrefix}:${handoffId}`;
+  try {
+    const db = await openPendingImageDb();
+    const file = await new Promise<File | Blob | null>((resolve, reject) => {
+      const tx = db.transaction(pendingImageStoreName, 'readwrite');
+      const store = tx.objectStore(pendingImageStoreName);
+      const getRequest = store.get(key);
+      getRequest.onsuccess = () => {
+        const result = getRequest.result ?? null;
+        store.delete(key);
+        resolve(result);
+      };
+      getRequest.onerror = () => reject(getRequest.error);
+    });
+    db.close();
+    return file;
+  } catch {
+    return null;
+  }
+}
+
 type TargetMode = 'ratio' | 'exact' | 'platform';
 type FitMode = 'crop' | 'fit' | 'stretch';
 type ExportFormat = 'png' | 'jpeg' | 'webp';
 type CategoryFilter = 'all' | PlatformCategory;
+
+interface ResizeIslandProps {
+  initialPlatform?: string;
+  initialFormat?: string;
+  initialWidth?: number;
+  initialHeight?: number;
+}
 
 const platformPresets = platformFormats.map((format) => ({
   label: `${format.platform} ${format.name}`,
@@ -54,22 +100,34 @@ function CopyBtn({ value }: { value: string }) {
   );
 }
 
-export default function ResizeIsland() {
+export default function ResizeIsland({
+  initialPlatform,
+  initialFormat,
+  initialWidth = 1920,
+  initialHeight = 1080,
+}: ResizeIslandProps = {}) {
+  const initialPlatformIndex = Math.max(0, platformPresets.findIndex((preset) =>
+    preset.platform === initialPlatform &&
+    preset.name === initialFormat &&
+    preset.w === initialWidth &&
+    preset.h === initialHeight
+  ));
+
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [imgWidth, setImgWidth] = useState(0);
   const [imgHeight, setImgHeight] = useState(0);
   const [fileName, setFileName] = useState('');
 
-  const [targetMode, setTargetMode] = useState<TargetMode>('ratio');
+  const [targetMode, setTargetMode] = useState<TargetMode>(initialPlatform ? 'platform' : 'ratio');
   const [fitMode, setFitMode] = useState<FitMode>('crop');
 
   const [ratioW, setRatioW] = useState(16);
   const [ratioH, setRatioH] = useState(9);
-  const [exactW, setExactW] = useState(1920);
-  const [exactH, setExactH] = useState(1080);
-  const [selectedPlatform, setSelectedPlatform] = useState(0);
-  const [selectedPlatforms, setSelectedPlatforms] = useState<number[]>([0]);
-  const [platformQuery, setPlatformQuery] = useState('');
+  const [exactW, setExactW] = useState(initialWidth);
+  const [exactH, setExactH] = useState(initialHeight);
+  const [selectedPlatform, setSelectedPlatform] = useState(initialPlatformIndex);
+  const [selectedPlatforms, setSelectedPlatforms] = useState<number[]>([initialPlatformIndex]);
+  const [platformQuery, setPlatformQuery] = useState(initialPlatform ? `${initialPlatform} ${initialFormat || ''}` : '');
   const [platformCategory, setPlatformCategory] = useState<CategoryFilter>('all');
 
   const [fitFill, setFitFill] = useState<'blur' | 'color'>('blur');
@@ -82,10 +140,26 @@ export default function ResizeIsland() {
   const imgRef = useRef<HTMLImageElement | null>(null);
   const platformCategories: CategoryFilter[] = ['all', 'social', 'video', 'professional', 'print', 'cinema', 'display-ads'];
 
+  const loadImageSrc = useCallback((src: string, name?: string) => {
+    const img = new Image();
+    img.onload = () => {
+      imgRef.current = img;
+      setImgWidth(img.naturalWidth);
+      setImgHeight(img.naturalHeight);
+      setImageSrc(src);
+      if (name) setFileName(name);
+    };
+    img.src = src;
+  }, []);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tw = params.get('tw');
     const th = params.get('th');
+    const handoffId = params.get('handoff') || '';
+    const platform = params.get('platform');
+    const format = params.get('format');
+
     if (tw && th) {
       const pw = parseInt(tw, 10);
       const ph = parseInt(th, 10);
@@ -100,7 +174,47 @@ export default function ResizeIsland() {
         setTargetMode('exact');
       }
     }
-  }, []);
+
+    if (platform && format) {
+      const idx = platformPresets.findIndex(
+        (p) => p.platform === platform && p.name === format
+      );
+      if (idx !== -1) {
+        setSelectedPlatform(idx);
+        setSelectedPlatforms([idx]);
+        setTargetMode('platform');
+        setPlatformQuery(`${platform} ${format}`);
+      }
+    }
+
+    if (!handoffId) return;
+
+    let objectUrl: string | null = null;
+    takePendingImageFile(handoffId).then((file) => {
+      if (file) {
+        objectUrl = URL.createObjectURL(file);
+        const name = (file as File).name;
+        loadImageSrc(objectUrl, name);
+        sessionStorage.removeItem(`aspect-ratio-pending-image-meta:${handoffId}`);
+        return;
+      }
+      const pendingImage = sessionStorage.getItem(`aspect-ratio-pending-image:${handoffId}`);
+      if (!pendingImage) return;
+      try {
+        const parsed = JSON.parse(pendingImage) as { src?: string; fileName?: string };
+        if (parsed.src) {
+          loadImageSrc(parsed.src, parsed.fileName);
+          sessionStorage.removeItem(`aspect-ratio-pending-image:${handoffId}`);
+        }
+      } catch {
+        sessionStorage.removeItem(`aspect-ratio-pending-image:${handoffId}`);
+      }
+    });
+
+    return () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [loadImageSrc]);
 
   const handleTargetModeChange = (m: TargetMode) => {
     setTargetMode(m);

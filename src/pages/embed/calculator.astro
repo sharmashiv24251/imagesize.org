@@ -1,19 +1,3 @@
----
-const params = Astro.url.searchParams;
-const startW = Math.max(1, parseInt(params.get('w') || '1920', 10) || 1920);
-const startH = Math.max(1, parseInt(params.get('h') || '1080', 10) || 1080);
-const theme = params.get('theme') === 'light' ? 'light' : 'dark';
-const accentParam = params.get('accent') || '0FB5A1';
-const accent = /^[0-9a-fA-F]{6}$/.test(accentParam) ? `#${accentParam}` : '#0FB5A1';
-
-const bg = theme === 'light' ? '#FAFAF8' : '#0E1015';
-const surface = theme === 'light' ? '#F2F1ED' : '#161A21';
-const surface2 = theme === 'light' ? '#E5E3DC' : '#1E242D';
-const border = theme === 'light' ? '#D2CFC4' : '#2A313C';
-const text = theme === 'light' ? '#44413A' : '#E8E9EC';
-const muted = theme === 'light' ? '#807C6E' : '#9AA1AC';
----
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -21,8 +5,27 @@ const muted = theme === 'light' ? '#807C6E' : '#9AA1AC';
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex,follow" />
   <title>Embedded Aspect Ratio Calculator</title>
-  <style define:vars={{ bg, surface, surface2, border, text, muted, accent }}>
+  <style>
     * { box-sizing: border-box; }
+    :root {
+      --bg: #0E1015;
+      --surface: #161A21;
+      --surface2: #1E242D;
+      --border: #2A313C;
+      --text: #E8E9EC;
+      --muted: #9AA1AC;
+      --accent: #0FB5A1;
+      --accent-ink: #07110f;
+    }
+    :root[data-theme="light"] {
+      --bg: #FAFAF8;
+      --surface: #F2F1ED;
+      --surface2: #E5E3DC;
+      --border: #D2CFC4;
+      --text: #44413A;
+      --muted: #807C6E;
+      --accent-ink: #0F0E0C;
+    }
     html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text); }
     body {
       font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -59,7 +62,7 @@ const muted = theme === 'light' ? '#807C6E' : '#9AA1AC';
       height: 22px;
       border-radius: 6px;
       background: var(--accent);
-      color: #07110f;
+      color: var(--accent-ink);
       display: grid;
       place-items: center;
       font-size: 10px;
@@ -189,12 +192,12 @@ const muted = theme === 'light' ? '#807C6E' : '#9AA1AC';
       <div class="grid">
         <label>
           Width
-          <input id="width" type="number" min="1" inputmode="numeric" value={startW} />
+          <input id="width" type="number" min="1" inputmode="numeric" value="1920" />
         </label>
         <button class="swap" id="swap" type="button" aria-label="Swap dimensions">↕</button>
         <label>
           Height
-          <input id="height" type="number" min="1" inputmode="numeric" value={startH} />
+          <input id="height" type="number" min="1" inputmode="numeric" value="1080" />
         </label>
       </div>
       <div class="results">
@@ -215,6 +218,24 @@ const muted = theme === 'light' ? '#807C6E' : '#9AA1AC';
     const orientationOutput = document.getElementById('orientation');
     const pixelsOutput = document.getElementById('pixels');
     const preview = document.getElementById('preview');
+
+    function normalizeHex(value, fallback = '0FB5A1') {
+      const raw = `${value || ''}`.replace('#', '');
+      return /^[0-9a-fA-F]{6}$/.test(raw) ? raw.toUpperCase() : fallback;
+    }
+
+    function applyEmbedSettings() {
+      const params = new URLSearchParams(window.location.search);
+      const w = Math.max(1, parseInt(params.get('w') || '1920', 10) || 1920);
+      const h = Math.max(1, parseInt(params.get('h') || '1080', 10) || 1080);
+      const theme = params.get('theme') === 'light' ? 'light' : 'dark';
+      const accent = `#${normalizeHex(params.get('accent'))}`;
+
+      widthInput.value = String(w);
+      heightInput.value = String(h);
+      document.documentElement.dataset.theme = theme;
+      document.documentElement.style.setProperty('--accent', accent);
+    }
 
     function gcd(a, b) {
       a = Math.abs(Math.round(a));
@@ -270,6 +291,7 @@ const muted = theme === 'light' ? '#807C6E' : '#9AA1AC';
         setTimeout(() => { button.textContent = 'Copy'; }, 900);
       });
     });
+    applyEmbedSettings();
     update();
   </script>
 </body>

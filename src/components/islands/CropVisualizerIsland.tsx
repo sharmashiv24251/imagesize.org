@@ -223,6 +223,74 @@ export default function CropVisualizerIsland() {
     ctx.restore();
   }, []);
 
+  const drawCropSelection = useCallback((
+    ctx: CanvasRenderingContext2D,
+    crop: { x: number; y: number; width: number; height: number },
+    scale: number,
+    canvasW: number,
+    canvasH: number
+  ) => {
+    const x = Math.round(crop.x * scale);
+    const y = Math.round(crop.y * scale);
+    const w = Math.round(crop.width * scale);
+    const h = Math.round(crop.height * scale);
+    const accent = getComputedStyle(document.documentElement).getPropertyValue('--color-teal-400').trim() || '#21CFB0';
+
+    ctx.save();
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.48)';
+    ctx.fillRect(0, 0, canvasW, y);
+    ctx.fillRect(0, y + h, canvasW, Math.max(0, canvasH - y - h));
+    ctx.fillRect(0, y, x, h);
+    ctx.fillRect(x + w, y, Math.max(0, canvasW - x - w), h);
+
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x + 1, y + 1, Math.max(1, w - 2), Math.max(1, h - 2));
+
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.38)';
+    ctx.lineWidth = 1;
+    for (const n of [1, 2]) {
+      const gx = x + (w * n) / 3;
+      const gy = y + (h * n) / 3;
+      ctx.beginPath();
+      ctx.moveTo(gx, y);
+      ctx.lineTo(gx, y + h);
+      ctx.moveTo(x, gy);
+      ctx.lineTo(x + w, gy);
+      ctx.stroke();
+    }
+
+    const points = [
+      [x, y],
+      [x + w, y],
+      [x, y + h],
+      [x + w, y + h],
+      [x + w / 2, y + h / 2],
+    ];
+    for (const [px, py] of points) {
+      ctx.beginPath();
+      ctx.arc(px, py, 5, 0, Math.PI * 2);
+      ctx.fillStyle = '#E8E9EC';
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = accent;
+      ctx.stroke();
+    }
+
+    const label = `${crop.width} x ${crop.height}`;
+    ctx.font = '600 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+    const labelWidth = ctx.measureText(label).width + 18;
+    const labelX = Math.min(Math.max(8, x + w / 2 - labelWidth / 2), Math.max(8, canvasW - labelWidth - 8));
+    const labelY = Math.min(y + h + 10, canvasH - 28);
+    ctx.fillStyle = accent;
+    ctx.beginPath();
+    ctx.roundRect(labelX, labelY, labelWidth, 24, 6);
+    ctx.fill();
+    ctx.fillStyle = '#07110f';
+    ctx.fillText(label, labelX + 9, labelY + 16);
+    ctx.restore();
+  }, []);
+
   // Render preview on canvas
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -243,16 +311,17 @@ export default function CropVisualizerIsland() {
       ctx.drawImage(img, 0, 0, imgWidth, imgHeight, 0, 0, canvas.width, canvas.height);
     } else if (mode === 'crop') {
       const crop = calculateCropWithFocus(imgWidth, imgHeight, targetW, targetH, cropFocus.x, cropFocus.y);
-      scale = Math.min(maxPreview / crop.width, maxPreview / crop.height, 1);
-      canvas.width = Math.round(crop.width * scale);
-      canvas.height = Math.round(crop.height * scale);
+      scale = Math.min(maxPreview / imgWidth, maxPreview / imgHeight, 1);
+      canvas.width = Math.round(imgWidth * scale);
+      canvas.height = Math.round(imgHeight * scale);
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(
         img,
-        crop.x, crop.y, crop.width, crop.height,
+        0, 0, imgWidth, imgHeight,
         0, 0, canvas.width, canvas.height
       );
+      drawCropSelection(ctx, crop, scale, canvas.width, canvas.height);
     } else if (mode === 'padding') {
       const pad = calculatePadding(imgWidth, imgHeight, targetW, targetH);
       scale = Math.min(maxPreview / pad.totalW, maxPreview / pad.totalH, 1);
@@ -288,7 +357,7 @@ export default function CropVisualizerIsland() {
         Math.round(imgWidth * scale), Math.round(imgHeight * scale)
       );
     }
-  }, [imageSrc, imgWidth, imgHeight, targetW, targetH, mode, padFill, padColor, cropFocus, previewView, drawBlurredBackground]);
+  }, [imageSrc, imgWidth, imgHeight, targetW, targetH, mode, padFill, padColor, cropFocus, previewView, drawBlurredBackground, drawCropSelection]);
 
   const handleExport = useCallback(() => {
     const canvas = canvasRef.current;
@@ -343,9 +412,37 @@ export default function CropVisualizerIsland() {
 
   const handleCanvasPointerDown = useCallback((event: PointerEvent) => {
     if (mode !== 'crop' || previewView !== 'after' || !crop || !canvasRef.current) return;
-    dragRef.current = { pointerX: event.clientX, pointerY: event.clientY, focusX: cropFocus.x, focusY: cropFocus.y };
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    const canvasX = (event.clientX - rect.left) * (canvas.width / rect.width);
+    const canvasY = (event.clientY - rect.top) * (canvas.height / rect.height);
+    const previewScale = canvas.width / imgWidth;
+    const cropX = crop.x * previewScale;
+    const cropY = crop.y * previewScale;
+    const cropW = crop.width * previewScale;
+    const cropH = crop.height * previewScale;
+    const insideCrop =
+      canvasX >= cropX &&
+      canvasX <= cropX + cropW &&
+      canvasY >= cropY &&
+      canvasY <= cropY + cropH;
+    const movableX = imgWidth - crop.width;
+    const movableY = imgHeight - crop.height;
+    const pointerSourceX = canvasX / previewScale;
+    const pointerSourceY = canvasY / previewScale;
+    const nextFocus = insideCrop
+      ? cropFocus
+      : {
+          x: movableX > 0 ? Math.min(1, Math.max(0, (pointerSourceX - crop.width / 2) / movableX)) : 0.5,
+          y: movableY > 0 ? Math.min(1, Math.max(0, (pointerSourceY - crop.height / 2) / movableY)) : 0.5,
+        };
+
+    if (!insideCrop) {
+      setCropFocus(nextFocus);
+    }
+    dragRef.current = { pointerX: event.clientX, pointerY: event.clientY, focusX: nextFocus.x, focusY: nextFocus.y };
     canvasRef.current.setPointerCapture(event.pointerId);
-  }, [mode, previewView, crop, cropFocus]);
+  }, [mode, previewView, crop, cropFocus, imgWidth, imgHeight]);
 
   const handleCanvasPointerMove = useCallback((event: PointerEvent) => {
     if (!dragRef.current || !crop || !canvasRef.current) return;
@@ -353,10 +450,10 @@ export default function CropVisualizerIsland() {
     const movableX = imgWidth - crop.width;
     const movableY = imgHeight - crop.height;
     const nextX = movableX > 0
-      ? dragRef.current.focusX - ((event.clientX - dragRef.current.pointerX) / rect.width) * (crop.width / movableX)
+      ? dragRef.current.focusX + ((event.clientX - dragRef.current.pointerX) * imgWidth) / (rect.width * movableX)
       : 0.5;
     const nextY = movableY > 0
-      ? dragRef.current.focusY - ((event.clientY - dragRef.current.pointerY) / rect.height) * (crop.height / movableY)
+      ? dragRef.current.focusY + ((event.clientY - dragRef.current.pointerY) * imgHeight) / (rect.height * movableY)
       : 0.5;
     setCropFocus({ x: Math.min(1, Math.max(0, nextX)), y: Math.min(1, Math.max(0, nextY)) });
   }, [crop, imgWidth, imgHeight]);
@@ -463,7 +560,7 @@ export default function CropVisualizerIsland() {
                   previewView === view ? 'bg-teal-500/15 text-teal-400 font-medium' : 'text-text-muted hover:text-text-primary'
                 }`}
               >
-                {view}
+                {view === 'after' ? 'Selection' : 'Original'}
               </button>
             ))}
           </div>
@@ -492,7 +589,7 @@ export default function CropVisualizerIsland() {
             </label>
           )}
           {mode === 'crop' && (
-            <span class="text-xs text-text-muted sm:ml-auto">Drag the preview to reposition the crop.</span>
+            <span class="text-xs text-text-muted sm:ml-auto">Drag the fixed-ratio selection to choose what exports.</span>
           )}
         </div>
       )}

@@ -5,17 +5,17 @@ import FAQ from '../components/ui/FAQ.astro';
 import RelatedTools from '../components/ui/RelatedTools.astro';
 import { buildWebApplicationLD, buildFAQLD, buildBreadcrumbLD } from '../lib/seo';
 
-const title = 'Embeddable Aspect Ratio Calculator Widget';
-const description = 'Generate a responsive iframe embed for the aspectratio.dev calculator. Themeable, lightweight, and free for blogs, docs, and design resources.';
+const title = 'Embeddable Aspect Ratio Tools';
+const description = 'Generate responsive iframe embeds for the aspectratio.dev calculator, cropper, and resizer. Themeable, lightweight, and free for blogs, docs, and design resources.';
 
 const faqs = [
   {
-    question: 'Can I embed this calculator on my site?',
-    answer: 'Yes. Use the generated iframe snippet and paste it into any page that supports HTML embeds. The widget is responsive and includes a small powered-by link back to aspectratio.dev.',
+    question: 'Can I embed these tools on my site?',
+    answer: 'Yes. Choose the calculator, cropper, or resizer, then paste the generated iframe snippet into any page that supports HTML embeds. Each widget is responsive and includes a small powered-by link back to aspectratio.dev.',
   },
   {
     question: 'Does the widget upload or track user data?',
-    answer: 'No. The embedded calculator only performs local math in the browser. It does not process images, upload files, or require an account.',
+    answer: 'No. The calculator only performs local math, and the image tools process files in the visitor’s browser. Images are not uploaded to aspectratio.dev and no account is required.',
   },
   {
     question: 'Can I customize the starting dimensions?',
@@ -24,7 +24,7 @@ const faqs = [
 ];
 
 const jsonLD = [
-  buildWebApplicationLD('Embeddable Aspect Ratio Calculator Widget', description, 'https://aspectratio.dev/embed'),
+  buildWebApplicationLD('Embeddable Aspect Ratio Tools', description, 'https://aspectratio.dev/embed'),
   buildFAQLD(faqs),
   buildBreadcrumbLD([
     { name: 'Home', url: 'https://aspectratio.dev' },
@@ -57,10 +57,10 @@ const relatedTools = [
 
     <div class="mb-8 max-w-3xl">
       <h1 class="text-3xl sm:text-4xl font-bold text-text-primary tracking-tight mb-3">
-        Embeddable Aspect Ratio Calculator
+        Embeddable Aspect Ratio Tools
       </h1>
       <p class="text-text-muted">
-        Add a compact ratio calculator to docs, tutorials, design-system pages, or creator resources. Tune the starting dimensions and theme, then paste the iframe snippet.
+        Add a compact ratio calculator, image cropper, or resizer to docs, tutorials, design-system pages, or creator resources. Pick a tool, tune the dimensions and theme, then paste the iframe snippet.
       </p>
     </div>
 
@@ -89,31 +89,50 @@ const relatedTools = [
       <aside class="bg-surface rounded-xl border border-border-dark/50 p-4 space-y-4">
         <div>
           <h2 class="text-sm font-semibold text-text-primary mb-1">Generate Snippet</h2>
-          <p class="text-xs text-text-muted">The generated code uses a responsive width and fixed height.</p>
+          <p class="text-xs text-text-muted">The generated code uses a responsive width and fixed iframe height.</p>
         </div>
+
+        <fieldset>
+          <legend class="text-[10px] text-text-muted uppercase tracking-wider mb-1">Tool</legend>
+          <div class="grid grid-cols-3 gap-1 p-1 bg-bg rounded-lg border border-border-dark/70" role="radiogroup" aria-label="Embedded tool">
+            <button type="button" data-tool-option="calculator" aria-pressed="true" class="embed-tool-option px-2 py-2 rounded-md text-xs font-medium transition-colors">
+              Calculator
+            </button>
+            <button type="button" data-tool-option="crop" aria-pressed="false" class="embed-tool-option px-2 py-2 rounded-md text-xs font-medium transition-colors">
+              Cropper
+            </button>
+            <button type="button" data-tool-option="resize" aria-pressed="false" class="embed-tool-option px-2 py-2 rounded-md text-xs font-medium transition-colors">
+              Resizer
+            </button>
+          </div>
+        </fieldset>
 
         <div class="grid grid-cols-2 gap-3">
           <label class="block">
-            <span class="text-[10px] text-text-muted uppercase tracking-wider">Width</span>
-            <input id="embed-width" type="number" value="1920" min="1" class="mt-1 w-full px-3 py-2 bg-surface-2 border border-border-dark rounded-lg text-text-primary font-mono text-sm focus:border-teal-500 outline-none" />
+            <span id="embed-width-label" class="text-[10px] text-text-muted uppercase tracking-wider">Width</span>
+            <input id="embed-width" type="number" value="1920" min="1" class="embed-control mt-1 w-full px-3 py-2 bg-surface-2 border border-border-dark rounded-lg text-text-primary font-mono text-sm outline-none" />
           </label>
           <label class="block">
-            <span class="text-[10px] text-text-muted uppercase tracking-wider">Height</span>
-            <input id="embed-height" type="number" value="1080" min="1" class="mt-1 w-full px-3 py-2 bg-surface-2 border border-border-dark rounded-lg text-text-primary font-mono text-sm focus:border-teal-500 outline-none" />
+            <span id="embed-height-label" class="text-[10px] text-text-muted uppercase tracking-wider">Height</span>
+            <input id="embed-height" type="number" value="1080" min="1" class="embed-control mt-1 w-full px-3 py-2 bg-surface-2 border border-border-dark rounded-lg text-text-primary font-mono text-sm outline-none" />
           </label>
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-3 gap-3">
           <label class="block">
             <span class="text-[10px] text-text-muted uppercase tracking-wider">Theme</span>
-            <select id="embed-theme" class="mt-1 w-full px-3 py-2 bg-surface-2 border border-border-dark rounded-lg text-text-primary text-sm focus:border-teal-500 outline-none">
+            <select id="embed-theme" class="embed-control mt-1 w-full px-3 py-2 bg-surface-2 border border-border-dark rounded-lg text-text-primary text-sm outline-none">
               <option value="dark">Dark</option>
               <option value="light">Light</option>
             </select>
           </label>
           <label class="block">
             <span class="text-[10px] text-text-muted uppercase tracking-wider">Accent</span>
-            <input id="embed-accent" type="color" value="#0FB5A1" class="mt-1 w-full h-[38px] px-1 py-1 bg-surface-2 border border-border-dark rounded-lg focus:border-teal-500 outline-none" />
+            <input id="embed-accent" type="color" value="#0FB5A1" class="embed-control mt-1 w-full h-[38px] px-1 py-1 bg-surface-2 border border-border-dark rounded-lg outline-none" />
+          </label>
+          <label class="block">
+            <span class="text-[10px] text-text-muted uppercase tracking-wider">Frame</span>
+            <input id="embed-frame-height" type="number" value="320" min="240" class="embed-control mt-1 w-full px-3 py-2 bg-surface-2 border border-border-dark rounded-lg text-text-primary font-mono text-sm outline-none" />
           </label>
         </div>
 
@@ -122,7 +141,7 @@ const relatedTools = [
           <textarea id="embed-code" readonly rows="7" class="mt-1 w-full px-3 py-2 bg-bg border border-border-dark rounded-lg text-text-primary font-mono text-xs leading-relaxed focus:border-teal-500 outline-none resize-none"></textarea>
         </label>
 
-        <button id="copy-embed" class="w-full px-4 py-2.5 rounded-lg bg-teal-500 text-bg text-sm font-semibold hover:bg-teal-400 transition-colors">
+        <button id="copy-embed" class="w-full px-4 py-2.5 rounded-lg text-bg text-sm font-semibold transition-colors">
           Copy Embed Code
         </button>
       </aside>
@@ -132,10 +151,10 @@ const relatedTools = [
       <h2 class="text-xl font-semibold text-text-primary mb-4">Why Embed It?</h2>
       <div class="text-sm text-text-muted space-y-4 leading-relaxed">
         <p>
-          The widget is built for pages that explain layout, video, print, or social sizing. Readers can test dimensions in context without leaving your guide.
+          The widgets are built for pages that explain layout, video, print, or social sizing. Readers can calculate dimensions, test crops, or resize an image in context without leaving your guide.
         </p>
         <p>
-          It is intentionally small: one iframe, no account, no image upload, and no dependency on your site’s JavaScript. The powered-by link keeps attribution clear.
+          Each embed is intentionally small: one iframe, no account, no dependency on your site’s JavaScript, and image work stays client-side in the visitor’s browser. The powered-by link keeps attribution clear.
         </p>
       </div>
     </div>
@@ -151,22 +170,111 @@ const relatedTools = [
     </div>
   </div>
 
+  <style is:global>
+    :root {
+      --embed-accent: #0FB5A1;
+    }
+
+    #open-widget {
+      color: var(--embed-accent);
+    }
+
+    #open-widget:hover {
+      color: color-mix(in srgb, var(--embed-accent) 80%, white);
+    }
+
+    .embed-control:focus {
+      border-color: var(--embed-accent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--embed-accent) 20%, transparent);
+    }
+
+    .embed-tool-option {
+      color: var(--color-text-muted);
+    }
+
+    .embed-tool-option:hover {
+      color: var(--color-text-primary);
+    }
+
+    .embed-tool-option[aria-pressed="true"] {
+      background: color-mix(in srgb, var(--embed-accent) 16%, transparent);
+      color: var(--embed-accent);
+    }
+
+    #copy-embed {
+      background: var(--embed-accent);
+      color: #07110f;
+    }
+
+    #copy-embed:hover {
+      background: color-mix(in srgb, var(--embed-accent) 86%, white);
+    }
+  </style>
+
   <script is:inline>
     const widthInput = document.getElementById('embed-width');
     const heightInput = document.getElementById('embed-height');
+    const widthLabel = document.getElementById('embed-width-label');
+    const heightLabel = document.getElementById('embed-height-label');
+    const frameHeightInput = document.getElementById('embed-frame-height');
     const themeInput = document.getElementById('embed-theme');
     const accentInput = document.getElementById('embed-accent');
     const codeOutput = document.getElementById('embed-code');
     const preview = document.getElementById('widget-preview');
     const openWidget = document.getElementById('open-widget');
     const copyButton = document.getElementById('copy-embed');
+    const toolButtons = Array.from(document.querySelectorAll('[data-tool-option]'));
+    let currentTool = 'calculator';
+
+    const tools = {
+      calculator: {
+        path: '/embed/calculator',
+        title: 'Aspect ratio calculator',
+        previewTitle: 'Aspect ratio calculator widget preview',
+        frameHeight: 320,
+        widthLabel: 'Width',
+        heightLabel: 'Height',
+        paramNames: ['w', 'h'],
+      },
+      crop: {
+        path: '/embed/crop',
+        title: 'Image cropper',
+        previewTitle: 'Image cropper widget preview',
+        frameHeight: 640,
+        widthLabel: 'Target W',
+        heightLabel: 'Target H',
+        paramNames: ['tw', 'th'],
+      },
+      resize: {
+        path: '/embed/resize',
+        title: 'Crop and resize tool',
+        previewTitle: 'Crop and resize widget preview',
+        frameHeight: 680,
+        widthLabel: 'Target W',
+        heightLabel: 'Target H',
+        paramNames: ['tw', 'th'],
+      },
+    };
+
+    function normalizeHex(value) {
+      const raw = `${value || ''}`.replace('#', '');
+      return /^[0-9a-fA-F]{6}$/.test(raw) ? raw.toUpperCase() : '0FB5A1';
+    }
 
     function widgetUrl() {
       const w = Math.max(1, parseInt(widthInput.value, 10) || 1920);
       const h = Math.max(1, parseInt(heightInput.value, 10) || 1080);
       const theme = themeInput.value;
-      const accent = accentInput.value.replace('#', '');
-      return `/embed/calculator?w=${w}&h=${h}&theme=${theme}&accent=${accent}`;
+      const accent = normalizeHex(accentInput.value);
+      const tool = tools[currentTool] || tools.calculator;
+      const [widthParam, heightParam] = tool.paramNames;
+      const params = new URLSearchParams({
+        [widthParam]: String(w),
+        [heightParam]: String(h),
+        theme,
+        accent,
+      });
+      return `${tool.path}?${params.toString()}`;
     }
 
     function absoluteWidgetUrl() {
@@ -176,13 +284,34 @@ const relatedTools = [
     function updateEmbed() {
       const src = widgetUrl();
       const absoluteSrc = absoluteWidgetUrl();
-      const code = `<iframe src="${absoluteSrc}" title="Aspect ratio calculator" width="100%" height="320" style="border:0;border-radius:12px;overflow:hidden" loading="lazy"></iframe>`;
+      const tool = tools[currentTool] || tools.calculator;
+      const frameHeight = Math.max(240, parseInt(frameHeightInput.value, 10) || tool.frameHeight);
+      const code = `<iframe src="${absoluteSrc}" title="${tool.title}" width="100%" height="${frameHeight}" style="border:0;border-radius:12px;overflow:hidden" loading="lazy"></iframe>`;
+      document.documentElement.style.setProperty('--embed-accent', `#${normalizeHex(accentInput.value)}`);
+      widthLabel.textContent = tool.widthLabel;
+      heightLabel.textContent = tool.heightLabel;
+      preview.title = tool.previewTitle;
+      preview.style.height = `${frameHeight}px`;
       preview.src = src;
       openWidget.href = src;
       codeOutput.value = code;
+      toolButtons.forEach((button) => {
+        const active = button.dataset.toolOption === currentTool;
+        button.setAttribute('aria-pressed', String(active));
+      });
     }
 
-    [widthInput, heightInput, themeInput, accentInput].forEach((input) => {
+    toolButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        const nextTool = button.dataset.toolOption || 'calculator';
+        if (!tools[nextTool]) return;
+        currentTool = nextTool;
+        frameHeightInput.value = String(tools[nextTool].frameHeight);
+        updateEmbed();
+      });
+    });
+
+    [widthInput, heightInput, frameHeightInput, themeInput, accentInput].forEach((input) => {
       input.addEventListener('input', updateEmbed);
       input.addEventListener('change', updateEmbed);
     });

@@ -5,7 +5,7 @@ import {
   orientation,
   nearestCommonRatios,
 } from '../../lib/ratio';
-import { categoryLabels, platformFormats, type PlatformCategory } from '../../lib/platforms';
+import { categoryLabels, getPlatformFormatSlug, platformFormats, type PlatformCategory } from '../../lib/platforms';
 
 interface ImageInfo {
   src: string;
@@ -372,7 +372,9 @@ export default function ImageAnalyzerIsland() {
                   <tr key={`${pf.platform}-${pf.name}`} class="hover:bg-surface-2/30 transition-colors">
                     <td class="px-4 py-3 text-text-primary font-medium">{pf.platform}</td>
                     <td class="px-4 py-3 text-text-muted">
-                      <div>{pf.name}</div>
+                      <a href={`/${getPlatformFormatSlug(pf)}`} class="text-text-primary hover:text-teal-400 transition-colors">
+                        {pf.name}
+                      </a>
                       {(pf.safeZone || pf.dpi) && (
                         <div class="mt-1 flex flex-wrap gap-1">
                           {pf.safeZone && <span title={pf.safeZone} class="text-[10px] px-1.5 py-0.5 rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/20">Safe zone</span>}

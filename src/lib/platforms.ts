@@ -17,6 +17,83 @@ export interface PlatformFormat {
   safeZone?: string;
 }
 
+export interface PlatformPageFormat extends PlatformFormat {
+  slug: string;
+  aliases: string[];
+  keyword: string;
+}
+
+export function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/\+/g, ' plus ')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+export function getPlatformFormatSlug(format: PlatformFormat): string {
+  return `${slugify(format.platform)}-${slugify(format.name)}-size`;
+}
+
+function getFormatAliases(format: PlatformFormat): string[] {
+  const platform = slugify(format.platform);
+  const name = slugify(format.name);
+  const aliases = new Set<string>();
+
+  aliases.add(`${platform}-${name}-resolution`);
+  aliases.add(`${platform}-${name}-dimensions`);
+
+  if (format.name.toLowerCase().includes('header') || format.name.toLowerCase().includes('cover') || format.name.toLowerCase().includes('banner')) {
+    aliases.add(`${platform}-banner-size`);
+    aliases.add(`${platform}-banner-resolution`);
+    aliases.add(`${platform}-cover-size`);
+  }
+
+  if (format.platform === 'LinkedIn' && format.name === 'Personal Header') {
+    aliases.add('linkedin-banner-size');
+    aliases.add('linkedin-header-size');
+    aliases.add('linkedin-background-photo-size');
+  }
+
+  if (format.platform === 'LinkedIn' && format.name === 'Company Cover') {
+    aliases.add('linkedin-company-banner-size');
+    aliases.add('linkedin-company-cover-size');
+  }
+
+  if (format.platform === 'YouTube' && format.name === 'Thumbnail') {
+    aliases.add('youtube-thumbnail-size');
+    aliases.add('youtube-thumbnail-resolution');
+  }
+
+  if (format.platform === 'Instagram' && format.name === 'Story / Reel') {
+    aliases.add('instagram-reel-size');
+    aliases.add('instagram-story-size');
+  }
+
+  return [...aliases];
+}
+
+export function getPlatformPageFormats(): PlatformPageFormat[] {
+  const usedAliases = new Set<string>();
+
+  return platformFormats.map((format) => {
+    const slug = getPlatformFormatSlug(format);
+    const aliases = getFormatAliases(format).filter((alias) => {
+      if (alias === slug || usedAliases.has(alias)) return false;
+      usedAliases.add(alias);
+      return true;
+    });
+
+    return {
+      ...format,
+      slug,
+      aliases,
+      keyword: `${format.platform} ${format.name} size`,
+    };
+  });
+}
+
 export const platformFormats: PlatformFormat[] = [
   { platform: 'Instagram', name: 'Square Post', w: 1080, h: 1080, ratio: '1:1', category: 'social' },
   { platform: 'Instagram', name: 'Portrait Post', w: 1080, h: 1350, ratio: '4:5', category: 'social' },
