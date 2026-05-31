@@ -15,6 +15,7 @@ interface ImageInfo {
   fileSize: number;
   fileType: string;
   file: File;
+  handoffId: string;
 }
 
 type CategoryFilter = 'all' | PlatformCategory;
@@ -29,13 +30,15 @@ type Compatibility = 'fits' | 'crop' | 'wrong';
 
 const pendingImageDbName = 'aspect-ratio-toolkit';
 const pendingImageStoreName = 'handoff';
-const pendingImageKey = 'image-analyzer-to-crop';
+const pendingImageKeyPrefix = 'image-analyzer-to-crop';
 
 function openPendingImageDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(pendingImageDbName, 1);
     request.onupgradeneeded = () => {
-      request.result.createObjectStore(pendingImageStoreName);
+      if (!request.result.objectStoreNames.contains(pendingImageStoreName)) {
+        request.result.createObjectStore(pendingImageStoreName);
+      }
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
@@ -43,8 +46,10 @@ function openPendingImageDb(): Promise<IDBDatabase> {
 }
 
 async function storePendingImage(image: ImageInfo) {
+  const key = `${pendingImageKeyPrefix}:${image.handoffId}`;
+
   try {
-    sessionStorage.setItem('aspect-ratio-pending-image-meta', JSON.stringify({
+    sessionStorage.setItem(`aspect-ratio-pending-image-meta:${image.handoffId}`, JSON.stringify({
       fileName: image.fileName,
       width: image.width,
       height: image.height,
@@ -58,14 +63,14 @@ async function storePendingImage(image: ImageInfo) {
     const db = await openPendingImageDb();
     await new Promise<void>((resolve, reject) => {
       const tx = db.transaction(pendingImageStoreName, 'readwrite');
-      tx.objectStore(pendingImageStoreName).put(image.file, pendingImageKey);
+      tx.objectStore(pendingImageStoreName).put(image.file, key);
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });
     db.close();
   } catch {
     try {
-      sessionStorage.setItem('aspect-ratio-pending-image', JSON.stringify({
+      sessionStorage.setItem(`aspect-ratio-pending-image:${image.handoffId}`, JSON.stringify({
         src: image.src,
         fileName: image.fileName,
         width: image.width,
@@ -133,13 +138,15 @@ export default function ImageAnalyzerIsland() {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<CategoryFilter>('all');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const handoffPromiseRef = useRef<Promise<void> | null>(null);
 
   const analyzeImage = useCallback((file: File) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = new Image();
       img.onload = () => {
-        setImage({
+        const handoffId = crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+        const nextImage = {
           src: e.target?.result as string,
           width: img.naturalWidth,
           height: img.naturalHeight,
@@ -147,7 +154,10 @@ export default function ImageAnalyzerIsland() {
           fileSize: file.size,
           fileType: file.type,
           file,
-        });
+          handoffId,
+        };
+        setImage(nextImage);
+        handoffPromiseRef.current = storePendingImage(nextImage);
       };
       img.src = e.target?.result as string;
     };
@@ -376,11 +386,11 @@ export default function ImageAnalyzerIsland() {
                     <td class="px-4 py-3">
                       {status !== 'fits' && (
                         <a
-                          href={`/crop?w=${image.width}&h=${image.height}&tw=${pf.w}&th=${pf.h}`}
+                          href={`/crop?w=${image.width}&h=${image.height}&tw=${pf.w}&th=${pf.h}&handoff=${encodeURIComponent(image.handoffId)}&platform=${encodeURIComponent(pf.platform)}&format=${encodeURIComponent(pf.name)}`}
                           onClick={async (event) => {
                             event.preventDefault();
-                            await storePendingImage(image);
-                            window.location.href = `/crop?w=${image.width}&h=${image.height}&tw=${pf.w}&th=${pf.h}`;
+                            await handoffPromiseRef.current;
+                            window.location.href = `/crop?w=${image.width}&h=${image.height}&tw=${pf.w}&th=${pf.h}&handoff=${encodeURIComponent(image.handoffId)}&platform=${encodeURIComponent(pf.platform)}&format=${encodeURIComponent(pf.name)}`;
                           }}
                           class="text-xs text-teal-400 hover:text-teal-300 transition-colors"
                         >

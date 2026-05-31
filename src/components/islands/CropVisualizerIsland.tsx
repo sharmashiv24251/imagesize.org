@@ -23,29 +23,33 @@ const presets: Preset[] = [
 
 const pendingImageDbName = 'aspect-ratio-toolkit';
 const pendingImageStoreName = 'handoff';
-const pendingImageKey = 'image-analyzer-to-crop';
+const pendingImageKeyPrefix = 'image-analyzer-to-crop';
 
 function openPendingImageDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(pendingImageDbName, 1);
     request.onupgradeneeded = () => {
-      request.result.createObjectStore(pendingImageStoreName);
+      if (!request.result.objectStoreNames.contains(pendingImageStoreName)) {
+        request.result.createObjectStore(pendingImageStoreName);
+      }
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
 }
 
-async function takePendingImageFile(): Promise<File | Blob | null> {
+async function takePendingImageFile(handoffId: string): Promise<File | Blob | null> {
+  const key = `${pendingImageKeyPrefix}:${handoffId}`;
+
   try {
     const db = await openPendingImageDb();
     const file = await new Promise<File | Blob | null>((resolve, reject) => {
       const tx = db.transaction(pendingImageStoreName, 'readwrite');
       const store = tx.objectStore(pendingImageStoreName);
-      const getRequest = store.get(pendingImageKey);
+      const getRequest = store.get(key);
       getRequest.onsuccess = () => {
         const result = getRequest.result ?? null;
-        store.delete(pendingImageKey);
+        store.delete(key);
         resolve(result);
       };
       getRequest.onerror = () => reject(getRequest.error);
@@ -89,6 +93,8 @@ export default function CropVisualizerIsland() {
   const [imgHeight, setImgHeight] = useState(0);
   const [targetW, setTargetW] = useState(16);
   const [targetH, setTargetH] = useState(9);
+  const [targetLabel, setTargetLabel] = useState<string | null>(null);
+  const [targetSizeLabel, setTargetSizeLabel] = useState<string | null>(null);
   const [mode, setMode] = useState<CropMode>('crop');
   const [padFill, setPadFill] = useState<'blur' | 'color'>('blur');
   const [padColor, setPadColor] = useState('#000000');
@@ -118,31 +124,42 @@ export default function CropVisualizerIsland() {
     const params = new URLSearchParams(window.location.search);
     const tw = params.get('tw');
     const th = params.get('th');
+    const handoffId = params.get('handoff') || '';
+    const platform = params.get('platform');
+    const format = params.get('format');
     if (tw && th) {
-      const [sw, sh] = simplify(parseInt(tw, 10), parseInt(th, 10));
+      const targetPxW = parseInt(tw, 10);
+      const targetPxH = parseInt(th, 10);
+      const [sw, sh] = simplify(targetPxW, targetPxH);
       setTargetW(sw);
       setTargetH(sh);
+      setTargetSizeLabel(`${targetPxW} × ${targetPxH}`);
+    }
+    if (platform && format) {
+      setTargetLabel(`${platform} ${format}`);
     }
 
+    if (!handoffId) return;
+
     let objectUrl: string | null = null;
-    takePendingImageFile().then((file) => {
+    takePendingImageFile(handoffId).then((file) => {
       if (file) {
         objectUrl = URL.createObjectURL(file);
         loadImageSrc(objectUrl);
-        sessionStorage.removeItem('aspect-ratio-pending-image-meta');
+        sessionStorage.removeItem(`aspect-ratio-pending-image-meta:${handoffId}`);
         return;
       }
 
-      const pendingImage = sessionStorage.getItem('aspect-ratio-pending-image');
+      const pendingImage = sessionStorage.getItem(`aspect-ratio-pending-image:${handoffId}`);
       if (!pendingImage) return;
       try {
         const parsed = JSON.parse(pendingImage) as { src?: string };
         if (parsed.src) {
           loadImageSrc(parsed.src);
-          sessionStorage.removeItem('aspect-ratio-pending-image');
+          sessionStorage.removeItem(`aspect-ratio-pending-image:${handoffId}`);
         }
       } catch {
-        sessionStorage.removeItem('aspect-ratio-pending-image');
+        sessionStorage.removeItem(`aspect-ratio-pending-image:${handoffId}`);
       }
     });
 
@@ -536,6 +553,7 @@ export default function CropVisualizerIsland() {
               <div class="p-3 bg-surface-2/50 border-b border-border-dark/30 flex items-center justify-between">
                 <span class="text-xs text-text-muted">
                   {mode === 'crop' ? 'Crop Preview' : mode === 'padding' ? 'Padding Preview' : 'Letterbox Preview'}
+                  {targetLabel && <span class="ml-1 text-text-muted/60">· {targetLabel}</span>}
                   <span class="ml-2 font-mono text-teal-400">{targetW}:{targetH}</span>
                 </span>
                 <div class="flex items-center gap-2">
@@ -595,6 +613,18 @@ export default function CropVisualizerIsland() {
                   {mode === 'crop' ? 'Crop Result' : 'Padded Result'}
                 </h3>
                 <div class="space-y-2 text-sm">
+                  {targetLabel && (
+                    <div class="flex justify-between gap-3">
+                      <span class="text-text-muted">Target</span>
+                      <span class="text-right text-text-primary">{targetLabel}</span>
+                    </div>
+                  )}
+                  {targetSizeLabel && (
+                    <div class="flex justify-between gap-3">
+                      <span class="text-text-muted">Platform size</span>
+                      <span class="font-mono tabular-nums text-text-primary">{targetSizeLabel}</span>
+                    </div>
+                  )}
                   {mode === 'crop' && crop && (
                     <>
                       <div class="flex justify-between">
