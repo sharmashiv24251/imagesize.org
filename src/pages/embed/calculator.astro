@@ -1,0 +1,276 @@
+---
+const params = Astro.url.searchParams;
+const startW = Math.max(1, parseInt(params.get('w') || '1920', 10) || 1920);
+const startH = Math.max(1, parseInt(params.get('h') || '1080', 10) || 1080);
+const theme = params.get('theme') === 'light' ? 'light' : 'dark';
+const accentParam = params.get('accent') || '0FB5A1';
+const accent = /^[0-9a-fA-F]{6}$/.test(accentParam) ? `#${accentParam}` : '#0FB5A1';
+
+const bg = theme === 'light' ? '#FAFAF8' : '#0E1015';
+const surface = theme === 'light' ? '#F2F1ED' : '#161A21';
+const surface2 = theme === 'light' ? '#E5E3DC' : '#1E242D';
+const border = theme === 'light' ? '#D2CFC4' : '#2A313C';
+const text = theme === 'light' ? '#44413A' : '#E8E9EC';
+const muted = theme === 'light' ? '#807C6E' : '#9AA1AC';
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex,follow" />
+  <title>Embedded Aspect Ratio Calculator</title>
+  <style define:vars={{ bg, surface, surface2, border, text, muted, accent }}>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text); }
+    body {
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      padding: 12px;
+    }
+    .widget {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface);
+      overflow: hidden;
+    }
+    .top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      color: var(--text);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 650;
+    }
+    .mark {
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      background: var(--accent);
+      color: #07110f;
+      display: grid;
+      place-items: center;
+      font-size: 10px;
+      font-weight: 800;
+    }
+    .powered {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+    .powered:hover { color: var(--accent); }
+    .body { padding: 12px; }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 8px;
+      align-items: end;
+      margin-bottom: 12px;
+    }
+    label {
+      display: grid;
+      gap: 5px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+    input {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--text);
+      font: 600 18px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      padding: 9px 10px;
+      outline: none;
+      font-variant-numeric: tabular-nums;
+    }
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 24%, transparent);
+    }
+    .swap {
+      width: 34px;
+      height: 38px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface2);
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .swap:hover { color: var(--accent); }
+    .results {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .stat {
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      padding: 9px 10px;
+    }
+    .stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .stat strong {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      color: var(--text);
+      font: 700 15px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-variant-numeric: tabular-nums;
+      overflow-wrap: anywhere;
+    }
+    .copy {
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 11px;
+      padding: 2px;
+    }
+    .copy:hover { color: var(--accent); }
+    .preview-wrap {
+      height: 82px;
+      display: grid;
+      place-items: center;
+      margin-top: 12px;
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      background: color-mix(in srgb, var(--surface2) 55%, transparent);
+    }
+    .preview {
+      border: 2px solid var(--accent);
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+      min-width: 12px;
+      min-height: 12px;
+      transition: width .18s ease-out, height .18s ease-out;
+    }
+    @media (max-width: 360px) {
+      body { padding: 8px; }
+      .results { grid-template-columns: 1fr; }
+      input { font-size: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <section class="widget" aria-label="Aspect ratio calculator">
+    <div class="top">
+      <a class="brand" href="https://aspectratio.dev/calculator" target="_blank" rel="noopener">
+        <span class="mark">AR</span>
+        <span>Aspect Ratio Calculator</span>
+      </a>
+      <a class="powered" href="https://aspectratio.dev?utm_source=embed&utm_medium=widget&utm_campaign=calculator" target="_blank" rel="noopener">aspectratio.dev</a>
+    </div>
+    <div class="body">
+      <div class="grid">
+        <label>
+          Width
+          <input id="width" type="number" min="1" inputmode="numeric" value={startW} />
+        </label>
+        <button class="swap" id="swap" type="button" aria-label="Swap dimensions">↕</button>
+        <label>
+          Height
+          <input id="height" type="number" min="1" inputmode="numeric" value={startH} />
+        </label>
+      </div>
+      <div class="results">
+        <div class="stat"><span>Ratio</span><strong><output id="ratio"></output><button class="copy" data-copy="ratio" type="button">Copy</button></strong></div>
+        <div class="stat"><span>Decimal</span><strong><output id="decimal"></output><button class="copy" data-copy="decimal" type="button">Copy</button></strong></div>
+        <div class="stat"><span>Orientation</span><strong><output id="orientation"></output></strong></div>
+        <div class="stat"><span>Pixels</span><strong><output id="pixels"></output></strong></div>
+      </div>
+      <div class="preview-wrap" aria-hidden="true"><div id="preview" class="preview"></div></div>
+    </div>
+  </section>
+
+  <script is:inline>
+    const widthInput = document.getElementById('width');
+    const heightInput = document.getElementById('height');
+    const ratioOutput = document.getElementById('ratio');
+    const decimalOutput = document.getElementById('decimal');
+    const orientationOutput = document.getElementById('orientation');
+    const pixelsOutput = document.getElementById('pixels');
+    const preview = document.getElementById('preview');
+
+    function gcd(a, b) {
+      a = Math.abs(Math.round(a));
+      b = Math.abs(Math.round(b));
+      while (b) {
+        const t = b;
+        b = a % b;
+        a = t;
+      }
+      return a || 1;
+    }
+
+    function update() {
+      const w = Math.max(1, parseInt(widthInput.value, 10) || 1);
+      const h = Math.max(1, parseInt(heightInput.value, 10) || 1);
+      const d = gcd(w, h);
+      const ratio = `${w / d}:${h / d}`;
+      const decimal = w / h;
+      ratioOutput.value = ratio;
+      decimalOutput.value = decimal.toFixed(4);
+      orientationOutput.value = w === h ? 'Square' : w > h ? 'Landscape' : 'Portrait';
+      pixelsOutput.value = (w * h).toLocaleString();
+
+      const maxW = 180;
+      const maxH = 64;
+      let previewW;
+      let previewH;
+      if (decimal >= maxW / maxH) {
+        previewW = maxW;
+        previewH = Math.max(12, Math.round(maxW / decimal));
+      } else {
+        previewH = maxH;
+        previewW = Math.max(12, Math.round(maxH * decimal));
+      }
+      preview.style.width = `${previewW}px`;
+      preview.style.height = `${previewH}px`;
+    }
+
+    widthInput.addEventListener('input', update);
+    heightInput.addEventListener('input', update);
+    document.getElementById('swap').addEventListener('click', () => {
+      const nextW = heightInput.value;
+      heightInput.value = widthInput.value;
+      widthInput.value = nextW;
+      update();
+    });
+    document.querySelectorAll('[data-copy]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const id = button.getAttribute('data-copy');
+        const value = document.getElementById(id).value;
+        navigator.clipboard?.writeText(value);
+        button.textContent = 'Copied';
+        setTimeout(() => { button.textContent = 'Copy'; }, 900);
+      });
+    });
+    update();
+  </script>
+</body>
+</html>
