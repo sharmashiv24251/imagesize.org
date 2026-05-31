@@ -388,11 +388,11 @@ export default function ImageAnalyzerIsland() {
                     <td class="px-4 py-3">
                       {status !== 'fits' && (
                         <a
-                          href={`/crop?w=${image.width}&h=${image.height}&tw=${pf.w}&th=${pf.h}&handoff=${encodeURIComponent(image.handoffId)}&platform=${encodeURIComponent(pf.platform)}&format=${encodeURIComponent(pf.name)}`}
+                          href={`/crop-and-resize?w=${image.width}&h=${image.height}&tw=${pf.w}&th=${pf.h}&handoff=${encodeURIComponent(image.handoffId)}&platform=${encodeURIComponent(pf.platform)}&format=${encodeURIComponent(pf.name)}`}
                           onClick={async (event) => {
                             event.preventDefault();
                             await handoffPromiseRef.current;
-                            window.location.href = `/crop?w=${image.width}&h=${image.height}&tw=${pf.w}&th=${pf.h}&handoff=${encodeURIComponent(image.handoffId)}&platform=${encodeURIComponent(pf.platform)}&format=${encodeURIComponent(pf.name)}`;
+                            window.location.href = `/crop-and-resize?w=${image.width}&h=${image.height}&tw=${pf.w}&th=${pf.h}&handoff=${encodeURIComponent(image.handoffId)}&platform=${encodeURIComponent(pf.platform)}&format=${encodeURIComponent(pf.name)}`;
                           }}
                           class="text-xs text-teal-400 hover:text-teal-300 transition-colors"
                         >

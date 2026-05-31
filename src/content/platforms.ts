@@ -72,7 +72,7 @@ export const platforms: PlatformEntry[] = [
   },
   {
     slug: 'x-twitter',
-    name: 'X (Twitter)',
+    name: 'Twitter/X',
     icon: 'twitter',
     tier: 2,
     description: 'Microblogging platform with specific image sizes for posts, headers, and profile pictures.',
@@ -89,10 +89,21 @@ export const platforms: PlatformEntry[] = [
     tier: 2,
     description: 'Professional network with sizes for posts, banners, and company page images.',
     sizes: [
-      { label: 'Post Image', width: 1200, height: 627, aspectRatio: '1.91:1' },
-      { label: 'Personal Banner', width: 1584, height: 396, aspectRatio: '4:1' },
+      { label: 'Post Image', width: 1200, height: 628, aspectRatio: '1.91:1' },
+      { label: 'Personal Cover', width: 1584, height: 396, aspectRatio: '4:1' },
+      { label: 'Page Cover', width: 4200, height: 700, aspectRatio: '6:1' },
       { label: 'Company Banner', width: 1128, height: 191, aspectRatio: '5.9:1' },
       { label: 'Profile Photo', width: 400, height: 400, aspectRatio: '1:1' },
+    ],
+  },
+  {
+    slug: 'google-forms',
+    name: 'Google Forms',
+    icon: 'form',
+    tier: 2,
+    description: 'Form header image templates and practical crop sizes for Google Forms themes.',
+    sizes: [
+      { label: 'Header Image', width: 1600, height: 400, aspectRatio: '4:1' },
     ],
   },
   {

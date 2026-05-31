@@ -5,17 +5,17 @@ import FAQ from '../components/ui/FAQ.astro';
 import RelatedTools from '../components/ui/RelatedTools.astro';
 import { buildWebApplicationLD, buildFAQLD, buildBreadcrumbLD } from '../lib/seo';
 
-const title = 'Embeddable Aspect Ratio Tools';
-const description = 'Generate responsive iframe embeds for the aspectratio.dev calculator, cropper, and resizer. Themeable, lightweight, and free for blogs, docs, and design resources.';
+const title = 'Embeddable Aspect Ratio & Image Tools';
+const description = 'Generate responsive iframe embeds for the imagesize.org calculator and image crop/resize tools. Themeable, lightweight, and free for blogs, docs, and design resources.';
 
 const faqs = [
   {
     question: 'Can I embed these tools on my site?',
-    answer: 'Yes. Choose the calculator, cropper, or resizer, then paste the generated iframe snippet into any page that supports HTML embeds. Each widget is responsive and includes a small powered-by link back to aspectratio.dev.',
+    answer: 'Yes. Choose the calculator or an image crop/resize widget, then paste the generated iframe snippet into any page that supports HTML embeds. Each widget is responsive and includes a small powered-by link back to imagesize.org.',
   },
   {
     question: 'Does the widget upload or track user data?',
-    answer: 'No. The calculator only performs local math, and the image tools process files in the visitor’s browser. Images are not uploaded to aspectratio.dev and no account is required.',
+    answer: 'No. The calculator only performs local math, and the image tools process files in the visitor’s browser. Images are not uploaded to imagesize.org and no account is required.',
   },
   {
     question: 'Can I customize the starting dimensions?',
@@ -24,11 +24,11 @@ const faqs = [
 ];
 
 const jsonLD = [
-  buildWebApplicationLD('Embeddable Aspect Ratio Tools', description, 'https://aspectratio.dev/embed'),
+  buildWebApplicationLD('Embeddable Aspect Ratio & Image Tools', description, 'https://imagesize.org/embed'),
   buildFAQLD(faqs),
   buildBreadcrumbLD([
-    { name: 'Home', url: 'https://aspectratio.dev' },
-    { name: 'Embed', url: 'https://aspectratio.dev/embed' },
+    { name: 'Home', url: 'https://imagesize.org' },
+    { name: 'Embed', url: 'https://imagesize.org/embed' },
   ]),
 ];
 
@@ -57,10 +57,10 @@ const relatedTools = [
 
     <div class="mb-8 max-w-3xl">
       <h1 class="text-3xl sm:text-4xl font-bold text-text-primary tracking-tight mb-3">
-        Embeddable Aspect Ratio Tools
+        Embeddable Aspect Ratio & Image Tools
       </h1>
       <p class="text-text-muted">
-        Add a compact ratio calculator, image cropper, or resizer to docs, tutorials, design-system pages, or creator resources. Pick a tool, tune the dimensions and theme, then paste the iframe snippet.
+        Add a compact ratio calculator or image crop/resize widget to docs, tutorials, design-system pages, or creator resources. Pick a tool, tune the dimensions and theme, then paste the iframe snippet.
       </p>
     </div>
 
@@ -101,8 +101,8 @@ const relatedTools = [
             <button type="button" data-tool-option="crop" aria-pressed="false" class="embed-tool-option px-2 py-2 rounded-md text-xs font-medium transition-colors">
               Cropper
             </button>
-            <button type="button" data-tool-option="resize" aria-pressed="false" class="embed-tool-option px-2 py-2 rounded-md text-xs font-medium transition-colors">
-              Resizer
+            <button type="button" data-tool-option="image-resizer" aria-pressed="false" class="embed-tool-option px-2 py-2 rounded-md text-xs font-medium transition-colors">
+              Resize / Crop / Fit
             </button>
           </div>
         </fieldset>
@@ -245,10 +245,10 @@ const relatedTools = [
         heightLabel: 'Target H',
         paramNames: ['tw', 'th'],
       },
-      resize: {
-        path: '/embed/resize',
-        title: 'Crop and resize tool',
-        previewTitle: 'Crop and resize widget preview',
+      'image-resizer': {
+        path: '/embed/image-resizer',
+        title: 'Image resize, crop, and fit tool',
+        previewTitle: 'Image resize, crop, and fit widget preview',
         frameHeight: 680,
         widthLabel: 'Target W',
         heightLabel: 'Target H',

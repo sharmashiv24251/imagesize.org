@@ -5,18 +5,42 @@ import FAQ from '../components/ui/FAQ.astro';
 import RelatedTools from '../components/ui/RelatedTools.astro';
 import ResizeIsland from '../components/islands/ResizeIsland';
 import { buildBreadcrumbLD, buildFAQLD, buildHowToLD, buildWebApplicationLD } from '../lib/seo';
-import { categoryLabels, getPlatformPageFormats, type PlatformPageFormat } from '../lib/platforms';
+import { absoluteUrl, site } from '../lib/site';
+import { categoryLabels, getPlatformPageFormats, imageSizeIntentPages, slugify, type ImageSizeIntentPage, type PlatformPageFormat } from '../lib/platforms';
 
 interface Props {
   format: PlatformPageFormat;
   slug: string;
   canonicalSlug: string;
+  intentPage?: ImageSizeIntentPage;
 }
 
 export function getStaticPaths() {
   const formats = getPlatformPageFormats();
   const paths: Array<{ params: { platformSize: string }; props: Props }> = [];
   const used = new Set<string>();
+
+  for (const intentPage of imageSizeIntentPages) {
+    const entries = [intentPage.slug, ...(intentPage.aliases || [])];
+    for (const slug of entries) {
+      if (used.has(slug)) continue;
+      used.add(slug);
+      paths.push({
+        params: { platformSize: slug },
+        props: {
+          format: {
+            ...intentPage.format,
+            slug: intentPage.slug,
+            aliases: intentPage.aliases || [],
+            keyword: intentPage.keyword,
+          },
+          slug,
+          canonicalSlug: intentPage.slug,
+          intentPage,
+        },
+      });
+    }
+  }
 
   for (const format of formats) {
     const entries = [format.slug, ...format.aliases];
@@ -33,26 +57,121 @@ export function getStaticPaths() {
   return paths;
 }
 
-const { format, slug, canonicalSlug } = Astro.props;
+const { format, slug, canonicalSlug, intentPage } = Astro.props;
 const isAlias = slug !== canonicalSlug;
 const displaySize = `${format.w}×${format.h}`;
 const category = categoryLabels[format.category];
-const title = `${format.platform} ${format.name} Size: ${displaySize} Pixels`;
-const description = `${format.platform} ${format.name} size is ${displaySize} px with a ${format.ratio} aspect ratio. Upload an image to crop, fit, resize, and export it for this exact format.`;
+const title = intentPage?.title || `${format.platform} ${format.name} Size: ${displaySize} Pixels`;
+const description = intentPage?.description || `${format.platform} ${format.name} size is ${displaySize} px with a ${format.ratio} aspect ratio. Upload an image to crop, fit, resize, and export it for this exact format.`;
 const keywords = [
-  `${format.platform} ${format.name} size`,
+  intentPage?.keyword || `${format.platform} ${format.name} size`,
   `${format.platform} ${format.name} dimensions`,
   `${format.platform} ${format.name} resolution`,
   `${format.platform} ${format.name} pixels`,
   `${displaySize}`,
   `${format.ratio} aspect ratio`,
 ].join(', ');
-const canonicalUrl = `https://aspectratio.dev/${isAlias ? slug : canonicalSlug}`;
+const canonicalUrl = absoluteUrl(`/${isAlias ? slug : canonicalSlug}`);
+const pageLabel = intentPage?.h1 || `${format.platform} ${format.name} Size`;
+const pageIntro = intentPage?.intro || `Use <strong class="text-text-primary">${displaySize} px</strong> for ${format.platform} ${format.name}. The target ratio is <strong class="text-text-primary font-mono">${format.ratio}</strong>. Upload your image below to crop, fit, resize, and export it for this exact format.`;
+
+interface SizeGuideLink {
+  label: string;
+  href: string;
+  w: number;
+  h: number;
+  categoryLabel: string;
+  sortKey: string;
+}
+
+const titleCaseWord = (word: string) => {
+  const upperWords = new Set(['a2', 'a3', 'a4', 'a5', 'dci', 'dpi', 'hd', 'ig', 'imu', 'qhd', 'uhd', 'us', 'x']);
+  if (/^\d+k$/.test(word)) return word.toUpperCase();
+  if (upperWords.has(word)) return word.toUpperCase();
+  return word.charAt(0).toUpperCase() + word.slice(1);
+};
+
+const labelFromSlug = (value: string) => value.split('-').map(titleCaseWord).join(' ');
+
+const addSizeGuideLink = (links: Map<string, SizeGuideLink>, href: string, label: string, item: PlatformPageFormat) => {
+  if (links.has(href)) return;
+  links.set(href, {
+    label,
+    href,
+    w: item.w,
+    h: item.h,
+    categoryLabel: categoryLabels[item.category],
+    sortKey: label.toLowerCase(),
+  });
+};
+
+const allSizeGuideLinks = (() => {
+  const links = new Map<string, SizeGuideLink>();
+  const formatPages = getPlatformPageFormats();
+
+  for (const page of imageSizeIntentPages) {
+    const pageFormat = {
+      ...page.format,
+      slug: page.slug,
+      aliases: page.aliases || [],
+      keyword: page.keyword,
+    };
+    addSizeGuideLink(links, `/${page.slug}`, page.h1, pageFormat);
+    for (const alias of page.aliases || []) {
+      addSizeGuideLink(links, `/${alias}`, labelFromSlug(alias), pageFormat);
+    }
+  }
+
+  for (const item of formatPages) {
+    addSizeGuideLink(links, `/${item.slug}`, `${item.platform} ${item.name} size`, item);
+    for (const alias of item.aliases) {
+      addSizeGuideLink(links, `/${alias}`, labelFromSlug(alias), item);
+    }
+  }
+
+  return [...links.values()].sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+})();
+
+const routeHrefs = new Set(allSizeGuideLinks.map((item) => item.href));
+const searchableLinks = [
+  intentPage?.keyword || `${format.platform} ${format.name} size`,
+  `${format.platform} ${format.name} resolution`,
+  `${format.platform} ${format.name} dimensions`,
+].map((term) => {
+  const href = `/${slugify(term)}`;
+  return {
+    label: term,
+    href: routeHrefs.has(href) ? href : `/${canonicalSlug}`,
+  };
+});
+
+const currentHref = `/${slug}`;
+const canonicalHref = `/${canonicalSlug}`;
+const selfSearchableHrefs = new Set(searchableLinks.map((item) => item.href));
+const currentAlphabeticalEntry =
+  allSizeGuideLinks.find((item) => item.href === currentHref) ||
+  allSizeGuideLinks.find((item) => item.href === canonicalHref) ||
+  {
+    label: pageLabel,
+    href: currentHref,
+    w: format.w,
+    h: format.h,
+    categoryLabel: category,
+    sortKey: pageLabel.toLowerCase(),
+  };
+const alphabeticalCandidates = allSizeGuideLinks.filter((item) => item.href !== currentHref && item.href !== canonicalHref && !selfSearchableHrefs.has(item.href));
+const alphabeticalInsertIndex = alphabeticalCandidates.findIndex((item) => item.sortKey.localeCompare(currentAlphabeticalEntry.sortKey) > 0);
+const alphabeticalCenter = alphabeticalInsertIndex === -1 ? alphabeticalCandidates.length : alphabeticalInsertIndex;
+const relatedLimit = 10;
+const relatedStart = Math.max(0, Math.min(alphabeticalCenter - Math.floor(relatedLimit / 2), alphabeticalCandidates.length - relatedLimit));
+const alphabeticalRelatedLinks = alphabeticalCandidates.slice(relatedStart, relatedStart + relatedLimit);
 
 const faqs = [
   {
-    question: `What is the ${format.platform} ${format.name} size?`,
-    answer: `The recommended ${format.platform} ${format.name} size is <strong>${displaySize} pixels</strong>, which uses a <strong>${format.ratio}</strong> aspect ratio.`,
+    question: intentPage ? `What is the ${intentPage.keyword}?` : `What is the ${format.platform} ${format.name} size?`,
+    answer: intentPage
+      ? `The main ${intentPage.keyword} preset on this page is <strong>${displaySize} pixels</strong>, which uses a <strong>${format.ratio}</strong> aspect ratio.`
+      : `The recommended ${format.platform} ${format.name} size is <strong>${displaySize} pixels</strong>, which uses a <strong>${format.ratio}</strong> aspect ratio.`,
   },
   {
     question: `Can I crop an image to ${displaySize} for ${format.platform}?`,
@@ -64,7 +183,7 @@ const faqs = [
   },
   {
     question: 'Is the image uploaded to a server?',
-    answer: 'No. Image processing runs locally in your browser using Canvas. Your file is not uploaded to aspectratio.dev.',
+    answer: `No. Image processing runs locally in your browser using Canvas. Your file is not uploaded to ${site.name}.`,
   },
 ];
 
@@ -72,12 +191,12 @@ const jsonLD = [
   buildWebApplicationLD(title, description, canonicalUrl),
   buildFAQLD(faqs),
   buildBreadcrumbLD([
-    { name: 'Home', url: 'https://aspectratio.dev' },
-    { name: `${format.platform} ${format.name} Size`, url: canonicalUrl },
+    { name: 'Home', url: site.url },
+    { name: pageLabel, url: canonicalUrl },
   ]),
   buildHowToLD(
-    `How to resize an image for ${format.platform} ${format.name}`,
-    `Resize, crop, or fit an image to ${displaySize} px for ${format.platform} ${format.name}.`,
+    `How to resize an image for ${pageLabel}`,
+    `Resize, crop, or fit an image to ${displaySize} px for ${pageLabel}.`,
     [
       { name: 'Upload your image', text: 'Drop an image into the tool or click to browse. Processing stays in your browser.' },
       { name: 'Use the preloaded target', text: `The target size is already set to ${displaySize} px.` },
@@ -104,7 +223,7 @@ const relatedTools = [
   {
     title: 'Crop & Resize',
     description: 'Open the full crop, fit, stretch, and batch export tool.',
-    href: `/resize?tw=${format.w}&th=${format.h}`,
+    href: `/crop-and-resize?tw=${format.w}&th=${format.h}`,
     icon: '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>',
   },
 ];
@@ -114,7 +233,7 @@ const relatedTools = [
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <Breadcrumb items={[
       { name: 'Home', url: '/' },
-      { name: `${format.platform} ${format.name} Size`, url: `/${slug}` },
+      { name: pageLabel, url: `/${slug}` },
     ]} />
 
     <div class="mb-8 max-w-3xl">
@@ -124,11 +243,20 @@ const relatedTools = [
         {format.safeZone && <span class="text-[11px] px-2 py-1 rounded-full bg-surface border border-border-dark text-text-muted">Safe zone note</span>}
       </div>
       <h1 class="text-3xl sm:text-4xl font-bold text-text-primary tracking-tight mb-3">
-        {format.platform} {format.name} Size
+        {pageLabel}
       </h1>
-      <p class="text-text-muted">
-        Use <strong class="text-text-primary">{displaySize} px</strong> for {format.platform} {format.name}. The target ratio is <strong class="text-text-primary font-mono">{format.ratio}</strong>. Upload your image below to crop, fit, resize, and export it for this exact format.
+      <p class="text-text-muted" set:html={pageIntro}>
       </p>
+      {intentPage?.caveat && (
+        <p class="text-sm text-warning mt-3">
+          {intentPage.caveat}
+        </p>
+      )}
+      {intentPage?.sourceUrl && (
+        <p class="text-xs text-text-muted mt-3">
+          Source: <a href={intentPage.sourceUrl} class="text-teal-400 hover:text-teal-300" target="_blank" rel="noopener">{intentPage.sourceLabel || intentPage.sourceUrl}</a>
+        </p>
+      )}
     </div>
 
     <section class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-6 mb-12">
@@ -138,7 +266,7 @@ const relatedTools = [
             <h2 class="text-sm font-semibold text-text-primary">Crop & Resize for {format.platform} {format.name}</h2>
             <p class="text-xs text-text-muted mt-1">Target preset: {displaySize} px, {format.ratio}</p>
           </div>
-          <a href={`/resize?tw=${format.w}&th=${format.h}`} class="text-xs text-teal-400 hover:text-teal-300">Open full tool</a>
+          <a href={`/crop-and-resize?tw=${format.w}&th=${format.h}`} class="text-xs text-teal-400 hover:text-teal-300">Open full tool</a>
         </div>
         <div class="p-4">
           <ResizeIsland
@@ -180,6 +308,20 @@ const relatedTools = [
           </dl>
         </div>
 
+        {intentPage?.relatedFormats && intentPage.relatedFormats.length > 1 && (
+          <div class="bg-surface rounded-xl border border-border-dark/50 p-4">
+            <h2 class="text-xs text-text-muted uppercase tracking-wider mb-3">Related Sizes</h2>
+            <div class="space-y-2">
+              {intentPage.relatedFormats.map((item) => (
+                <a href={`/crop-and-resize?tw=${item.w}&th=${item.h}`} class="block rounded-lg border border-border-dark/50 px-3 py-2 text-sm hover:border-teal-500/30 hover:bg-surface-2/30 transition-colors">
+                  <span class="block text-text-primary">{item.name}</span>
+                  <span class="font-mono text-xs text-text-muted">{item.w}×{item.h} · {item.ratio}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
         {format.safeZone && (
           <div class="bg-teal-500/5 rounded-xl border border-teal-500/20 p-4">
             <h2 class="text-xs text-teal-400 uppercase tracking-wider mb-2">Safe Zone</h2>
@@ -190,12 +332,20 @@ const relatedTools = [
         <div class="bg-surface rounded-xl border border-border-dark/50 p-4">
           <h2 class="text-xs text-text-muted uppercase tracking-wider mb-3">Also Searchable As</h2>
           <div class="flex flex-wrap gap-2">
-            {[
-              `${format.platform} ${format.name} size`,
-              `${format.platform} ${format.name} resolution`,
-              `${format.platform} ${format.name} dimensions`,
-            ].map((term) => (
-              <span class="text-[11px] px-2 py-1 rounded-full bg-bg border border-border-dark text-text-muted">{term}</span>
+            {searchableLinks.map((item) => (
+              <a href={item.href} class="text-[11px] px-2 py-1 rounded-full bg-bg border border-border-dark text-text-muted hover:text-teal-300 hover:border-teal-500/30 transition-colors">{item.label}</a>
+            ))}
+          </div>
+        </div>
+
+        <div class="bg-surface rounded-xl border border-border-dark/50 p-4">
+          <h2 class="text-xs text-text-muted uppercase tracking-wider mb-3">Related Image Sizes</h2>
+          <div class="space-y-2">
+            {alphabeticalRelatedLinks.map((item) => (
+              <a href={item.href} class="block rounded-lg border border-border-dark/50 px-3 py-2 text-sm hover:border-teal-500/30 hover:bg-surface-2/30 transition-colors">
+                <span class="block text-text-primary">{item.label}</span>
+                <span class="font-mono text-xs text-text-muted">{item.w}×{item.h} · {item.categoryLabel}</span>
+              </a>
             ))}
           </div>
         </div>
@@ -203,10 +353,10 @@ const relatedTools = [
     </section>
 
     <div class="max-w-3xl mx-auto mb-12">
-      <h2 class="text-xl font-semibold text-text-primary mb-4">{format.platform} {format.name} Dimensions</h2>
+      <h2 class="text-xl font-semibold text-text-primary mb-4">{pageLabel} Dimensions</h2>
       <div class="text-sm text-text-muted space-y-4 leading-relaxed">
         <p>
-          The recommended {format.platform} {format.name} resolution is <strong class="text-text-primary">{displaySize} pixels</strong>. This gives the platform the expected source size and reduces surprise cropping, blur, or empty padding.
+          The recommended {pageLabel.toLowerCase()} preset is <strong class="text-text-primary">{displaySize} pixels</strong>. This gives the platform the expected source size and reduces surprise cropping, blur, or empty padding.
         </p>
         <p>
           If your source image has a different shape, use Crop to fill the frame or Fit to keep the entire image visible with padding. For print and high-DPI formats, start from the largest source file you have before exporting.

@@ -2,7 +2,7 @@
   "lockfileVersion": 1,
   "workspaces": {
     "": {
-      "name": "aspect-ratio",
+      "name": "imagesize",
       "dependencies": {
         "@astrojs/preact": "^5.1.4",
         "@astrojs/sitemap": "^3.7.3",

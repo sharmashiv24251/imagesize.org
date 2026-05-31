@@ -33,11 +33,11 @@ const faqs = [
 ];
 
 const jsonLD = [
-  buildWebApplicationLD('Aspect Ratio Calculator', description, 'https://aspectratio.dev/calculator'),
+  buildWebApplicationLD('Aspect Ratio Calculator', description, 'https://imagesize.org/calculator'),
   buildFAQLD(faqs),
   buildBreadcrumbLD([
-    { name: 'Home', url: 'https://aspectratio.dev' },
-    { name: 'Calculator', url: 'https://aspectratio.dev/calculator' },
+    { name: 'Home', url: 'https://imagesize.org' },
+    { name: 'Calculator', url: 'https://imagesize.org/calculator' },
   ]),
 ];
 
@@ -50,8 +50,8 @@ const relatedTools = [
   },
   {
     title: 'Crop & Resize',
-    description: 'Crop, pad, or letterbox images to any target ratio. Live preview with export.',
-    href: '/crop',
+    description: 'Crop, fit, stretch, or resize images to any target size. Live preview with export.',
+    href: '/crop-and-resize',
     icon: '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M6.13 1L6 16a2 2 0 002 2h15"/><path d="M1 6.13L16 6a2 2 0 012 2v15"/></svg>',
   },
 ];

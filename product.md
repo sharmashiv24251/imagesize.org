@@ -1,4 +1,4 @@
-# aspectratio.dev — Product Specification
+# imagesize.org — Product Specification
 
 > The fastest, cleanest, most beautiful aspect-ratio toolkit on the web — built developer-first, designed to earn rankings instead of spamming for them.
 
@@ -122,7 +122,7 @@ Astro's island model is the cleanest way to satisfy "real working product + perf
 - **Tier 2** — templated but substantive: each embeds a live "size/check/resize for this platform" tool, not just a number. Release gradually, monitor traction.
 - **Tier 3** — dimension-pair conversion pages. **Ship `noindex`**, release in small batches once domain authority exists, prune anything that gets no traction after ~6 months.
 
-**Adjacent clusters (build into aspectratio.dev, they share all the infra):** the **CSS-units** cluster (`px↔rem/em/pt/vh`) is pure dev-cluster overlap and earns dev links; the **PPI/DPI/print** cluster (`pixels↔inches`, `cm→pixels`, A4/Letter at 300 DPI, PPI calculator) is topically adjacent, higher-CPC than ratio math, and a strong source of _linkable assets_ (printable charts). Heavier sister tools from the wider plan — **online ruler** (device detect → card calibration → manual) and **measure-image-size** — are better as their own properties cross-linked to this one, not bolted onto the ratio spec; keep them in the family, out of this codebase.
+**Adjacent clusters (build into imagesize.org, they share all the infra):** the **CSS-units** cluster (`px↔rem/em/pt/vh`) is pure dev-cluster overlap and earns dev links; the **PPI/DPI/print** cluster (`pixels↔inches`, `cm→pixels`, A4/Letter at 300 DPI, PPI calculator) is topically adjacent, higher-CPC than ratio math, and a strong source of _linkable assets_ (printable charts). Heavier sister tools from the wider plan — **online ruler** (device detect → card calibration → manual) and **measure-image-size** — are better as their own properties cross-linked to this one, not bolted onto the ratio spec; keep them in the family, out of this codebase.
 
 ---
 
@@ -211,7 +211,7 @@ Each is a tiny tool + copy button + the on-page explainer:
 
 ### 5.14 Embeddable Widget — **growth / link-earning lever**
 
-- `/embed/calculator`, `/embed/ratio`, etc. — an `<iframe>` snippet other sites can drop in, with a small "powered by aspectratio.dev" backlink.
+- `/embed/calculator`, `/embed/ratio`, etc. — an `<iframe>` snippet other sites can drop in, with a small "powered by imagesize.org" backlink.
 - Themeable (light/dark, accent), responsive, zero-config. This is one of the cleanest white-hat backlink engines available for a tool site — every embed is a contextual link.
 
 ---
@@ -487,7 +487,7 @@ Google neutralizes or penalizes manipulative links, so earn them with assets peo
 ## 12. Project structure
 
 ```
-aspectratio/
+imagesize/
 ├─ src/
 │  ├─ pages/                 # routes (see IA)
 │  ├─ layouts/

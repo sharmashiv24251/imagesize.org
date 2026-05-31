@@ -15,12 +15,29 @@ export interface PlatformFormat {
   category: PlatformCategory;
   dpi?: number;
   safeZone?: string;
+  notes?: string;
+  sourceUrl?: string;
 }
 
 export interface PlatformPageFormat extends PlatformFormat {
   slug: string;
   aliases: string[];
   keyword: string;
+}
+
+export interface ImageSizeIntentPage {
+  slug: string;
+  aliases?: string[];
+  format: PlatformFormat;
+  title: string;
+  h1: string;
+  description: string;
+  intro: string;
+  keyword: string;
+  relatedFormats?: PlatformFormat[];
+  sourceLabel?: string;
+  sourceUrl?: string;
+  caveat?: string;
 }
 
 export function slugify(value: string): string {
@@ -71,6 +88,16 @@ function getFormatAliases(format: PlatformFormat): string[] {
     aliases.add('instagram-story-size');
   }
 
+  if (format.platform === 'Twitter/X' && format.name === 'Post Image') {
+    aliases.add('twitter-post-image-size');
+    aliases.add('x-post-image-size');
+  }
+
+  if (format.platform === 'Twitter/X' && format.name === 'Header / Banner') {
+    aliases.add('twitter-header-size');
+    aliases.add('x-header-size');
+  }
+
   return [...aliases];
 }
 
@@ -111,15 +138,15 @@ export const platformFormats: PlatformFormat[] = [
   { platform: 'Facebook', name: 'Link Preview', w: 1200, h: 628, ratio: '1.91:1', category: 'social' },
   { platform: 'Facebook', name: 'Ad (Single Image)', w: 1200, h: 628, ratio: '1.91:1', category: 'social' },
   { platform: 'Facebook', name: 'Ad (Square)', w: 1080, h: 1080, ratio: '1:1', category: 'social' },
-  { platform: 'X (Twitter)', name: 'Post Image', w: 1600, h: 900, ratio: '16:9', category: 'social' },
-  { platform: 'X (Twitter)', name: 'Profile Banner', w: 1500, h: 500, ratio: '3:1', category: 'social' },
-  { platform: 'X (Twitter)', name: 'Profile Photo', w: 400, h: 400, ratio: '1:1', category: 'social' },
-  { platform: 'X (Twitter)', name: 'Card Image', w: 1200, h: 628, ratio: '1.91:1', category: 'social' },
+  { platform: 'Twitter/X', name: 'Post Image', w: 1200, h: 675, ratio: '16:9', category: 'social' },
+  { platform: 'Twitter/X', name: 'Header / Banner', w: 1500, h: 500, ratio: '3:1', category: 'social', safeZone: 'X notes that around 60px at the top and bottom can be cropped on some screens.', sourceUrl: 'https://help.x.com/en/managing-your-account/common-issues-when-uploading-profile-photo' },
+  { platform: 'Twitter/X', name: 'Profile Photo', w: 400, h: 400, ratio: '1:1', category: 'social', sourceUrl: 'https://help.x.com/en/managing-your-account/common-issues-when-uploading-profile-photo' },
+  { platform: 'Twitter/X', name: 'Card Image', w: 1200, h: 628, ratio: '1.91:1', category: 'social' },
   { platform: 'LinkedIn', name: 'Personal Header', w: 1584, h: 396, ratio: '4:1', category: 'professional' },
   { platform: 'LinkedIn', name: 'Company Cover', w: 1128, h: 191, ratio: '5.9:1', category: 'professional' },
   { platform: 'LinkedIn', name: 'Company Logo', w: 300, h: 300, ratio: '1:1', category: 'professional' },
   { platform: 'LinkedIn', name: 'Square Logo', w: 60, h: 60, ratio: '1:1', category: 'professional' },
-  { platform: 'LinkedIn', name: 'Post Image', w: 1200, h: 627, ratio: '1.91:1', category: 'professional' },
+  { platform: 'LinkedIn', name: 'Post Image', w: 1200, h: 628, ratio: '1.91:1', category: 'professional', sourceUrl: 'https://www.linkedin.com/help/linkedin/answer/a426534/single-image-ads-advertising-specifications?intendedLocale=und&lang=en-us' },
   { platform: 'LinkedIn', name: 'Portrait Post', w: 627, h: 1200, ratio: '1:1.91', category: 'professional' },
   { platform: 'LinkedIn', name: 'Article Cover', w: 1920, h: 1080, ratio: '16:9', category: 'professional' },
   { platform: 'LinkedIn', name: 'Carousel Slide', w: 1080, h: 1080, ratio: '1:1', category: 'professional' },
@@ -164,6 +191,7 @@ export const platformFormats: PlatformFormat[] = [
   { platform: 'Threads', name: 'Profile Photo', w: 400, h: 400, ratio: '1:1', category: 'social' },
   { platform: 'Telegram', name: 'Profile Photo', w: 800, h: 800, ratio: '1:1', category: 'social' },
   { platform: 'Telegram', name: 'Channel Banner', w: 1280, h: 720, ratio: '16:9', category: 'social' },
+  { platform: 'Google Forms', name: 'Header Image', w: 1600, h: 400, ratio: '4:1', category: 'professional', notes: 'Practical template size. Google documents header image upload and crop steps, but not a strict required pixel size.', sourceUrl: 'https://support.google.com/docs/answer/145737?hl=en-en' },
   { platform: 'Print', name: 'A4 Portrait @150 DPI', w: 1240, h: 1754, ratio: 'sqrt2:1', category: 'print', dpi: 150 },
   { platform: 'Print', name: 'A4 Portrait', w: 2480, h: 3508, ratio: 'sqrt2:1', category: 'print', dpi: 300 },
   { platform: 'Print', name: 'A4 Portrait @600 DPI', w: 4961, h: 7016, ratio: 'sqrt2:1', category: 'print', dpi: 600 },
@@ -215,6 +243,75 @@ export const platformFormats: PlatformFormat[] = [
   { platform: 'Screen', name: 'iPhone 16 Pro', w: 1206, h: 2622, ratio: '19.5:9', category: 'video' },
   { platform: 'Screen', name: 'iPad Pro 11-in', w: 1668, h: 2388, ratio: '4:3', category: 'video' },
   { platform: 'Screen', name: 'MacBook 14-in', w: 3024, h: 1964, ratio: '3:2', category: 'video' },
+];
+
+const findFormat = (platform: string, name: string) => {
+  const format = platformFormats.find((item) => item.platform === platform && item.name === name);
+  if (!format) throw new Error(`Missing platform format: ${platform} ${name}`);
+  return format;
+};
+
+export const imageSizeIntentPages: ImageSizeIntentPage[] = [
+  {
+    slug: 'linkedin-post-image-size',
+    format: findFormat('LinkedIn', 'Post Image'),
+    title: 'LinkedIn Post Image Size: 1200x628 Pixels',
+    h1: 'LinkedIn Post Image Size',
+    description: 'LinkedIn post image size guide with a 1200x628 preset, plus square and vertical options. Upload, resize, crop, and export in your browser.',
+    intro: 'Use 1200x628 px for a landscape LinkedIn post image. You can also prepare square 1200x1200 and vertical 720x900 versions for different feed layouts.',
+    keyword: 'linkedin post image size',
+    sourceLabel: 'LinkedIn single image ad specs',
+    sourceUrl: 'https://www.linkedin.com/help/linkedin/answer/a426534/single-image-ads-advertising-specifications?intendedLocale=und&lang=en-us',
+    relatedFormats: [
+      findFormat('LinkedIn', 'Post Image'),
+      { platform: 'LinkedIn', name: 'Square Post', w: 1200, h: 1200, ratio: '1:1', category: 'professional' },
+      { platform: 'LinkedIn', name: 'Vertical Post', w: 720, h: 900, ratio: '4:5', category: 'professional' },
+    ],
+  },
+  {
+    slug: 'linkedin-cover-image-size',
+    format: findFormat('LinkedIn', 'Personal Header'),
+    title: 'LinkedIn Cover Image Size: 1584x396 and 4200x700',
+    h1: 'LinkedIn Cover Image Size',
+    description: 'Resize a LinkedIn cover image for personal profiles at 1584x396 px or LinkedIn Pages at 4200x700 px. Crop and export locally.',
+    intro: 'LinkedIn cover intent can mean a personal profile background or a LinkedIn Page cover. Start with 1584x396 px for profiles, or switch to 4200x700 px for Pages.',
+    keyword: 'linkedin cover image size',
+    sourceLabel: 'LinkedIn profile and Page image specs',
+    sourceUrl: 'https://www.linkedin.com/help/linkedin/answer/a549049',
+    relatedFormats: [
+      findFormat('LinkedIn', 'Personal Header'),
+      { platform: 'LinkedIn', name: 'Page Cover', w: 4200, h: 700, ratio: '6:1', category: 'professional', sourceUrl: 'https://www.linkedin.com/help/linkedin/answer/a563309/image-specifications-for-your-linkedin-pages-and-career-pages?lang=en' },
+    ],
+  },
+  {
+    slug: 'google-forms-header-image-size',
+    format: findFormat('Google Forms', 'Header Image'),
+    title: 'Google Forms Header Image Size: 1600x400 Template',
+    h1: 'Google Forms Header Image Size',
+    description: 'Create a Google Forms header image with a practical 1600x400 px template. Resize, crop, and export privately in your browser.',
+    intro: 'A 1600x400 px image gives you a clean 4:1 header template for Google Forms. Google documents how to add and crop header images, but does not publish this as a strict required pixel size.',
+    keyword: 'google forms header image size',
+    sourceLabel: 'Google Forms header workflow',
+    sourceUrl: 'https://support.google.com/docs/answer/145737?hl=en-en',
+    caveat: 'Google Forms may crop or reposition the header depending on theme and screen size, so keep key text and logos near the center.',
+  },
+  {
+    slug: 'twitter-image-size',
+    aliases: ['x-image-size'],
+    format: findFormat('Twitter/X', 'Post Image'),
+    title: 'Twitter/X Image Size: Post, Header, and Profile Dimensions',
+    h1: 'Twitter/X Image Size',
+    description: 'Resize images for Twitter/X posts, headers, and profile photos. Start with a 1200x675 post image or choose official header and profile presets.',
+    intro: 'Use 1200x675 px for a clean 16:9 Twitter/X post image. The same tool also includes the official 1500x500 header and 400x400 profile photo presets.',
+    keyword: 'twitter image size',
+    sourceLabel: 'X profile and header image help',
+    sourceUrl: 'https://help.x.com/en/managing-your-account/common-issues-when-uploading-profile-photo',
+    relatedFormats: [
+      findFormat('Twitter/X', 'Post Image'),
+      findFormat('Twitter/X', 'Header / Banner'),
+      findFormat('Twitter/X', 'Profile Photo'),
+    ],
+  },
 ];
 
 export const categoryLabels: Record<PlatformCategory, string> = {

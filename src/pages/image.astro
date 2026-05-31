@@ -6,8 +6,8 @@ import RelatedTools from '../components/ui/RelatedTools.astro';
 import ImageAnalyzerIsland from '../components/islands/ImageAnalyzerIsland';
 import { buildWebApplicationLD, buildFAQLD, buildBreadcrumbLD } from '../lib/seo';
 
-const title = 'Image Aspect Ratio Analyzer — Upload & Check Platform Compatibility';
-const description = 'Upload any image to instantly detect its aspect ratio, resolution, and compatibility with YouTube, Instagram, TikTok, and more. 100% client-side — your image never leaves your browser.';
+const title = 'Image Size Analyzer — Check Dimensions, Ratio & File Size';
+const description = 'Upload any image to instantly detect its dimensions, file size, aspect ratio, and compatibility with LinkedIn, Twitter/X, Google Forms, YouTube, Instagram, and more. 100% client-side.';
 
 const faqs = [
   {
@@ -29,11 +29,11 @@ const faqs = [
 ];
 
 const jsonLD = [
-  buildWebApplicationLD('Image Aspect Ratio Analyzer', description, 'https://aspectratio.dev/image'),
+  buildWebApplicationLD('Image Size Analyzer', description, 'https://imagesize.org/image'),
   buildFAQLD(faqs),
   buildBreadcrumbLD([
-    { name: 'Home', url: 'https://aspectratio.dev' },
-    { name: 'Image Analyzer', url: 'https://aspectratio.dev/image' },
+    { name: 'Home', url: 'https://imagesize.org' },
+    { name: 'Image Analyzer', url: 'https://imagesize.org/image' },
   ]),
 ];
 
@@ -46,8 +46,8 @@ const relatedTools = [
   },
   {
     title: 'Crop & Resize',
-    description: 'Crop, pad, or letterbox images to any target ratio with live preview.',
-    href: '/crop',
+    description: 'Crop, fit, stretch, or resize images to any target size with live preview.',
+    href: '/crop-and-resize',
     icon: '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M6.13 1L6 16a2 2 0 002 2h15"/><path d="M1 6.13L16 6a2 2 0 012 2v15"/></svg>',
   },
 ];
@@ -62,10 +62,10 @@ const relatedTools = [
 
     <div class="mb-8">
       <h1 class="text-3xl sm:text-4xl font-bold text-text-primary tracking-tight mb-3">
-        Image Aspect Ratio Analyzer
+        Image Size Analyzer
       </h1>
       <p class="text-text-muted max-w-2xl">
-        Drop any image to instantly see its dimensions, aspect ratio, and how it fits across every major social media platform. <strong class="text-text-primary">100% client-side</strong> — nothing is uploaded.
+        Drop any image to instantly see its dimensions, file size, aspect ratio, and how it fits across major social media and upload targets. <strong class="text-text-primary">100% client-side</strong> — nothing is uploaded.
       </p>
     </div>
 

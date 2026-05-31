@@ -6,9 +6,10 @@ import sitemap from '@astrojs/sitemap';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://aspectratio.dev',
+  site: 'https://imagesize.org',
   redirects: {
-    '/crop': '/resize',
+    '/crop': '/crop-and-resize',
+    '/resize': '/crop-and-resize',
   },
   integrations: [
     preact({ compat: true }),

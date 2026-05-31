@@ -1,3 +1,5 @@
+import { absoluteUrl, site } from './site';
+
 /**
  * seo.ts — JSON-LD builders, meta helpers, and indexing tier system.
  *
@@ -91,8 +93,8 @@ export function buildWebApplicationLD(name: string, description: string, url: st
     browserRequirements: 'Requires JavaScript',
     creator: {
       '@type': 'Organization',
-      name: 'aspectratio.dev',
-      url: 'https://aspectratio.dev',
+      name: site.name,
+      url: site.url,
     },
   };
 }
@@ -141,7 +143,7 @@ export function buildHowToLD(
     totalTime: 'PT1M',
     tool: {
       '@type': 'HowToTool',
-      name: 'aspectratio.dev',
+      name: site.name,
     },
     step: steps.map((step, i) => ({
       '@type': 'HowToStep',
@@ -157,14 +159,14 @@ export function buildWebSiteLD() {
   return {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
-    name: 'aspectratio.dev',
-    url: 'https://aspectratio.dev',
-    description: 'The fastest, cleanest aspect ratio toolkit on the web. Calculator, image analyzer, crop & resize tools — 100% client-side.',
+    name: site.name,
+    url: site.url,
+    description: site.description,
     potentialAction: {
       '@type': 'SearchAction',
       target: {
         '@type': 'EntryPoint',
-        urlTemplate: 'https://aspectratio.dev/calculator?w={width}&h={height}',
+        urlTemplate: absoluteUrl('/calculator?w={width}&h={height}'),
       },
       'query-input': 'required name=width name=height',
     },

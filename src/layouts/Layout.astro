@@ -2,6 +2,7 @@
 import '../styles/global.css';
 import type { IndexingTier } from '../lib/seo';
 import { getRobotsMeta } from '../lib/seo';
+import { site } from '../lib/site';
 
 export interface Props {
   title: string;
@@ -28,7 +29,7 @@ const {
   noindex = false,
 } = Astro.props;
 
-const siteName = 'aspectratio.dev';
+const siteName = site.name;
 const fullTitle = title.includes(siteName) ? title : `${title} — ${siteName}`;
 
 // Determine robots meta from tier system (or explicit noindex override)
@@ -76,16 +77,18 @@ const robotsMeta = noindex ? 'noindex,follow' : getRobotsMeta(tier);
       <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <a href="/" class="flex items-center gap-2 group" id="logo-link">
           <div class="w-8 h-8 rounded-md bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center text-white font-bold text-sm transition-transform group-hover:scale-110">
-            AR
+            {site.initials}
           </div>
           <span class="font-semibold text-text-primary text-lg tracking-tight">
-            aspect<span class="text-teal-500">ratio</span><span class="text-text-muted">.dev</span>
+            image<span class="text-teal-500">size</span><span class="text-text-muted">.org</span>
           </span>
         </a>
         <div class="hidden md:flex items-center gap-1">
-          <a href="/calculator" class="px-3 py-2 text-sm text-text-muted hover:text-text-primary hover:bg-surface rounded-md transition-all duration-150" id="nav-calculator">Calculator</a>
+          <a href="/crop-and-resize" class="px-3 py-2 text-sm text-text-muted hover:text-text-primary hover:bg-surface rounded-md transition-all duration-150" id="nav-crop-resize">Crop & Resize</a>
+          <a href="/reduce-image-size-in-kb" class="px-3 py-2 text-sm text-text-muted hover:text-text-primary hover:bg-surface rounded-md transition-all duration-150" id="nav-compress">Compress</a>
+          <a href="/image-size-for" class="px-3 py-2 text-sm text-text-muted hover:text-text-primary hover:bg-surface rounded-md transition-all duration-150" id="nav-image-size-for">Sizes</a>
           <a href="/image" class="px-3 py-2 text-sm text-text-muted hover:text-text-primary hover:bg-surface rounded-md transition-all duration-150" id="nav-image">Image Analyzer</a>
-          <a href="/resize" class="px-3 py-2 text-sm text-text-muted hover:text-text-primary hover:bg-surface rounded-md transition-all duration-150" id="nav-resize">Crop & Resize</a>
+          <a href="/calculator" class="px-3 py-2 text-sm text-text-muted hover:text-text-primary hover:bg-surface rounded-md transition-all duration-150" id="nav-calculator">Calculator</a>
           <a href="/embed" class="px-3 py-2 text-sm text-text-muted hover:text-text-primary hover:bg-surface rounded-md transition-all duration-150" id="nav-embed">Embed</a>
         </div>
         <div class="flex items-center gap-3">
@@ -104,9 +107,11 @@ const robotsMeta = noindex ? 'noindex,follow' : getRobotsMeta(tier);
       <!-- Mobile menu -->
       <div id="mobile-menu" class="hidden md:hidden border-t border-border-dark/50 bg-bg/95 backdrop-blur-md">
         <div class="px-4 py-3 space-y-1">
-          <a href="/calculator" class="block px-3 py-2 text-sm text-text-muted hover:text-text-primary hover:bg-surface rounded-md transition-all">Calculator</a>
+          <a href="/crop-and-resize" class="block px-3 py-2 text-sm text-text-muted hover:text-text-primary hover:bg-surface rounded-md transition-all">Crop & Resize</a>
+          <a href="/reduce-image-size-in-kb" class="block px-3 py-2 text-sm text-text-muted hover:text-text-primary hover:bg-surface rounded-md transition-all">Compress</a>
+          <a href="/image-size-for" class="block px-3 py-2 text-sm text-text-muted hover:text-text-primary hover:bg-surface rounded-md transition-all">Image Size For</a>
           <a href="/image" class="block px-3 py-2 text-sm text-text-muted hover:text-text-primary hover:bg-surface rounded-md transition-all">Image Analyzer</a>
-          <a href="/resize" class="block px-3 py-2 text-sm text-text-muted hover:text-text-primary hover:bg-surface rounded-md transition-all">Crop & Resize</a>
+          <a href="/calculator" class="block px-3 py-2 text-sm text-text-muted hover:text-text-primary hover:bg-surface rounded-md transition-all">Calculator</a>
           <a href="/embed" class="block px-3 py-2 text-sm text-text-muted hover:text-text-primary hover:bg-surface rounded-md transition-all">Embed Widget</a>
         </div>
       </div>
@@ -123,24 +128,27 @@ const robotsMeta = noindex ? 'noindex,follow' : getRobotsMeta(tier);
         <div>
           <h3 class="text-sm font-semibold text-text-primary mb-3">Tools</h3>
           <ul class="space-y-2">
-            <li><a href="/calculator" class="text-sm text-text-muted hover:text-teal-400 transition-colors">Calculator</a></li>
+            <li><a href="/crop-and-resize" class="text-sm text-text-muted hover:text-teal-400 transition-colors">Crop & Resize</a></li>
+            <li><a href="/reduce-image-size-in-kb" class="text-sm text-text-muted hover:text-teal-400 transition-colors">Compress Image</a></li>
+            <li><a href="/image-size-for" class="text-sm text-text-muted hover:text-teal-400 transition-colors">Image Size For</a></li>
             <li><a href="/image" class="text-sm text-text-muted hover:text-teal-400 transition-colors">Image Analyzer</a></li>
-            <li><a href="/resize" class="text-sm text-text-muted hover:text-teal-400 transition-colors">Crop & Resize</a></li>
+            <li><a href="/calculator" class="text-sm text-text-muted hover:text-teal-400 transition-colors">Calculator</a></li>
             <li><a href="/embed" class="text-sm text-text-muted hover:text-teal-400 transition-colors">Embed Widget</a></li>
           </ul>
         </div>
         <div>
-          <h3 class="text-sm font-semibold text-text-primary mb-3">Common Ratios</h3>
+          <h3 class="text-sm font-semibold text-text-primary mb-3">Popular Sizes</h3>
           <ul class="space-y-2">
-            <li><a href="/calculator?w=1920&h=1080" class="text-sm text-text-muted hover:text-teal-400 transition-colors">16:9</a></li>
-            <li><a href="/calculator?w=1024&h=768" class="text-sm text-text-muted hover:text-teal-400 transition-colors">4:3</a></li>
-            <li><a href="/calculator?w=1080&h=1080" class="text-sm text-text-muted hover:text-teal-400 transition-colors">1:1</a></li>
-            <li><a href="/calculator?w=1080&h=1920" class="text-sm text-text-muted hover:text-teal-400 transition-colors">9:16</a></li>
+            <li><a href="/linkedin-post-image-size" class="text-sm text-text-muted hover:text-teal-400 transition-colors">LinkedIn Post</a></li>
+            <li><a href="/linkedin-cover-image-size" class="text-sm text-text-muted hover:text-teal-400 transition-colors">LinkedIn Cover</a></li>
+            <li><a href="/google-forms-header-image-size" class="text-sm text-text-muted hover:text-teal-400 transition-colors">Google Forms Header</a></li>
+            <li><a href="/twitter-image-size" class="text-sm text-text-muted hover:text-teal-400 transition-colors">Twitter/X Image</a></li>
           </ul>
         </div>
         <div>
-          <h3 class="text-sm font-semibold text-text-primary mb-3">Developers</h3>
+          <h3 class="text-sm font-semibold text-text-primary mb-3">Reference</h3>
           <ul class="space-y-2">
+            <li><a href="/linkedin-post-image-size" class="text-sm text-text-muted hover:text-teal-400 transition-colors">Social Sizes</a></li>
             <li><a href="/css-aspect-ratio" class="text-sm text-text-muted hover:text-teal-400 transition-colors">CSS Generator</a></li>
             <li><a href="/embed" class="text-sm text-text-muted hover:text-teal-400 transition-colors">Embed Widget</a></li>
             <li><a href="/calculator" class="text-sm text-text-muted hover:text-teal-400 transition-colors">Calculator</a></li>
@@ -157,7 +165,7 @@ const robotsMeta = noindex ? 'noindex,follow' : getRobotsMeta(tier);
       </div>
       <div class="mt-10 pt-6 border-t border-border-dark/30 flex flex-col sm:flex-row justify-between items-center gap-4">
         <p class="text-sm text-text-muted">
-          © {new Date().getFullYear()} aspectratio.dev — Built for developers & designers
+          © {new Date().getFullYear()} {site.name} — Built for fast image sizing
         </p>
         <p class="text-xs text-text-muted/50">
           All calculations are performed locally in your browser. No data is sent to any server.
