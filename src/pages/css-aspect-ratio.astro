@@ -1,0 +1,304 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Breadcrumb from '../components/ui/Breadcrumb.astro';
+import FAQ from '../components/ui/FAQ.astro';
+import RelatedTools from '../components/ui/RelatedTools.astro';
+import { buildBreadcrumbLD, buildFAQLD, buildSoftwareApplicationLD } from '../lib/seo';
+
+const title = 'CSS Aspect Ratio Generator';
+const description = 'Generate CSS aspect-ratio rules, responsive boxes, and padding fallback snippets from any width and height. Copy production-ready CSS instantly.';
+
+const faqs = [
+  {
+    question: 'What does the CSS aspect-ratio property do?',
+    answer: 'The aspect-ratio property tells the browser to preserve a width-to-height proportion when laying out an element. For example, aspect-ratio: 16 / 9 keeps a video-style widescreen shape.',
+  },
+  {
+    question: 'Do I still need the padding-top fallback?',
+    answer: 'Most modern browsers support aspect-ratio. The padding fallback is useful for older codebases, email-like constraints, or places where you need the classic intrinsic-ratio technique.',
+  },
+  {
+    question: 'Should I use 16 / 9 or 16:9 in CSS?',
+    answer: 'Use slash syntax in CSS: aspect-ratio: 16 / 9. Colon syntax is useful as a human-readable label, but CSS expects the slash form.',
+  },
+  {
+    question: 'Can I use this for images and embeds?',
+    answer: 'Yes. It works well for videos, iframes, thumbnails, cards, product media, and any container that should keep a stable shape while the page loads.',
+  },
+];
+
+const jsonLD = [
+  buildSoftwareApplicationLD('CSS Aspect Ratio Generator', description, 'https://aspectratio.dev/css-aspect-ratio'),
+  buildFAQLD(faqs),
+  buildBreadcrumbLD([
+    { name: 'Home', url: 'https://aspectratio.dev' },
+    { name: 'CSS Aspect Ratio Generator', url: 'https://aspectratio.dev/css-aspect-ratio' },
+  ]),
+];
+
+const relatedTools = [
+  {
+    title: 'Calculator',
+    description: 'Compute simplified ratios, decimals, and nearest common matches.',
+    href: '/calculator',
+    icon: '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/></svg>',
+  },
+  {
+    title: 'Embed Widget',
+    description: 'Generate a small iframe calculator for docs, blogs, and resources.',
+    href: '/embed',
+    icon: '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M16 18l6-6-6-6"/><path d="M8 6l-6 6 6 6"/><path d="M14 4l-4 16"/></svg>',
+  },
+  {
+    title: 'Resize',
+    description: 'Resize images to platform presets, exact pixels, or target ratios.',
+    href: '/resize',
+    icon: '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>',
+  },
+];
+---
+
+<Layout title={title} description={description} jsonLD={jsonLD}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <Breadcrumb items={[
+      { name: 'Home', url: '/' },
+      { name: 'CSS Aspect Ratio Generator', url: '/css-aspect-ratio' },
+    ]} />
+
+    <div class="mb-8 max-w-3xl">
+      <h1 class="text-3xl sm:text-4xl font-bold text-text-primary tracking-tight mb-3">
+        CSS Aspect Ratio Generator
+      </h1>
+      <p class="text-text-muted">
+        Generate `aspect-ratio` CSS, a responsive media wrapper, and the old-school padding fallback from any dimensions or common preset.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-6 mb-12">
+      <section class="bg-surface rounded-xl border border-border-dark/50 overflow-hidden">
+        <div class="p-4 border-b border-border-dark/40">
+          <h2 class="text-sm font-semibold text-text-primary">Generator</h2>
+          <p class="text-xs text-text-muted mt-1">Outputs update as you type.</p>
+        </div>
+
+        <div class="p-4 space-y-5">
+          <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-3 items-end">
+            <label class="block">
+              <span class="text-[10px] text-text-muted uppercase tracking-wider">Width</span>
+              <input id="ratio-w" type="number" value="16" min="1" inputmode="numeric" class="mt-1 w-full px-4 py-3 bg-surface-2 border border-border-dark rounded-lg text-text-primary font-mono text-lg tabular-nums focus:border-teal-500 focus:ring-1 focus:ring-teal-500/30 transition-all outline-none" />
+            </label>
+            <button id="swap-ratio" type="button" class="h-[50px] px-3 rounded-lg bg-surface-2 border border-border-dark text-text-muted hover:text-teal-400 transition-colors" aria-label="Swap ratio values">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+              </svg>
+            </button>
+            <label class="block">
+              <span class="text-[10px] text-text-muted uppercase tracking-wider">Height</span>
+              <input id="ratio-h" type="number" value="9" min="1" inputmode="numeric" class="mt-1 w-full px-4 py-3 bg-surface-2 border border-border-dark rounded-lg text-text-primary font-mono text-lg tabular-nums focus:border-teal-500 focus:ring-1 focus:ring-teal-500/30 transition-all outline-none" />
+            </label>
+          </div>
+
+          <div class="flex flex-wrap gap-2" aria-label="Common ratio presets">
+            {[
+              ['16:9', 16, 9],
+              ['4:3', 4, 3],
+              ['1:1', 1, 1],
+              ['9:16', 9, 16],
+              ['3:2', 3, 2],
+              ['4:5', 4, 5],
+              ['21:9', 21, 9],
+              ['2.39:1', 239, 100],
+            ].map(([label, w, h]) => (
+              <button type="button" data-preset-w={w} data-preset-h={h} class="px-3 py-1.5 text-xs font-mono rounded-full border border-border-dark/50 text-text-muted hover:border-teal-500/30 hover:text-text-primary transition-all">
+                {label}
+              </button>
+            ))}
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div class="px-3 py-2.5 bg-bg border border-border-dark/60 rounded-lg">
+              <div class="text-[10px] text-text-muted uppercase tracking-wider mb-1">CSS ratio</div>
+              <div id="css-ratio-stat" class="font-mono text-text-primary tabular-nums">16 / 9</div>
+            </div>
+            <div class="px-3 py-2.5 bg-bg border border-border-dark/60 rounded-lg">
+              <div class="text-[10px] text-text-muted uppercase tracking-wider mb-1">Human label</div>
+              <div id="human-ratio-stat" class="font-mono text-text-primary tabular-nums">16:9</div>
+            </div>
+            <div class="px-3 py-2.5 bg-bg border border-border-dark/60 rounded-lg">
+              <div class="text-[10px] text-text-muted uppercase tracking-wider mb-1">Padding fallback</div>
+              <div id="padding-stat" class="font-mono text-text-primary tabular-nums">56.25%</div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            <div class="bg-bg rounded-xl border border-border-dark/60 overflow-hidden">
+              <div class="px-3 py-2 border-b border-border-dark/50 flex items-center justify-between gap-3">
+                <h3 class="text-xs font-semibold text-text-primary">Modern CSS</h3>
+                <button type="button" data-copy-target="modern-css" class="text-xs text-text-muted hover:text-teal-400">Copy</button>
+              </div>
+              <pre class="p-3 overflow-x-auto text-xs leading-relaxed"><code id="modern-css" class="font-mono text-text-primary"></code></pre>
+            </div>
+
+            <div class="bg-bg rounded-xl border border-border-dark/60 overflow-hidden">
+              <div class="px-3 py-2 border-b border-border-dark/50 flex items-center justify-between gap-3">
+                <h3 class="text-xs font-semibold text-text-primary">Responsive Media Wrapper</h3>
+                <button type="button" data-copy-target="wrapper-css" class="text-xs text-text-muted hover:text-teal-400">Copy</button>
+              </div>
+              <pre class="p-3 overflow-x-auto text-xs leading-relaxed"><code id="wrapper-css" class="font-mono text-text-primary"></code></pre>
+            </div>
+
+            <div class="bg-bg rounded-xl border border-border-dark/60 overflow-hidden">
+              <div class="px-3 py-2 border-b border-border-dark/50 flex items-center justify-between gap-3">
+                <h3 class="text-xs font-semibold text-text-primary">Padding Fallback</h3>
+                <button type="button" data-copy-target="fallback-css" class="text-xs text-text-muted hover:text-teal-400">Copy</button>
+              </div>
+              <pre class="p-3 overflow-x-auto text-xs leading-relaxed"><code id="fallback-css" class="font-mono text-text-primary"></code></pre>
+            </div>
+
+            <div class="bg-bg rounded-xl border border-border-dark/60 overflow-hidden">
+              <div class="px-3 py-2 border-b border-border-dark/50 flex items-center justify-between gap-3">
+                <h3 class="text-xs font-semibold text-text-primary">HTML Example</h3>
+                <button type="button" data-copy-target="html-example" class="text-xs text-text-muted hover:text-teal-400">Copy</button>
+              </div>
+              <pre class="p-3 overflow-x-auto text-xs leading-relaxed"><code id="html-example" class="font-mono text-text-primary"></code></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="space-y-4">
+        <div class="bg-surface rounded-xl border border-border-dark/50 p-4">
+          <h2 class="text-xs text-text-muted uppercase tracking-wider mb-4">Preview</h2>
+          <div class="h-56 rounded-lg bg-bg border border-border-dark/60 flex items-center justify-center">
+            <div id="preview-box" class="border-2 border-teal-500/70 bg-teal-500/10 rounded-md transition-all duration-200 flex items-center justify-center">
+              <span id="preview-label" class="text-xs font-mono text-teal-400">16:9</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-surface rounded-xl border border-border-dark/50 p-4">
+          <h2 class="text-xs text-text-muted uppercase tracking-wider mb-3">Best For</h2>
+          <ul class="space-y-2 text-sm text-text-muted">
+            <li>Videos and iframes that should not cause layout shift</li>
+            <li>Card thumbnails that need consistent rows</li>
+            <li>Product media where images have mixed source sizes</li>
+            <li>Responsive embeds in docs and articles</li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+
+    <div class="max-w-3xl mx-auto mb-12">
+      <h2 class="text-xl font-semibold text-text-primary mb-4">How to Use CSS `aspect-ratio`</h2>
+      <div class="text-sm text-text-muted space-y-4 leading-relaxed">
+        <p>
+          The modern property is direct: set `aspect-ratio: 16 / 9` on the element or wrapper, then give it a width. The browser calculates the matching height before the media loads, which helps prevent layout shift.
+        </p>
+        <p>
+          For media elements, combine `aspect-ratio` with `width: 100%`, `height: auto`, or `object-fit: cover` depending on whether you want the whole image visible or a filled crop.
+        </p>
+      </div>
+    </div>
+
+    <div class="max-w-3xl mx-auto mb-12">
+      <h2 class="text-xl font-semibold text-text-primary mb-4">Frequently Asked Questions</h2>
+      <FAQ items={faqs} />
+    </div>
+
+    <div class="max-w-3xl mx-auto mb-8">
+      <h2 class="text-xl font-semibold text-text-primary mb-4">Related Tools</h2>
+      <RelatedTools tools={relatedTools} />
+    </div>
+  </div>
+
+  <script is:inline>
+    const ratioW = document.getElementById('ratio-w');
+    const ratioH = document.getElementById('ratio-h');
+    const previewBox = document.getElementById('preview-box');
+    const previewLabel = document.getElementById('preview-label');
+    const cssRatioStat = document.getElementById('css-ratio-stat');
+    const humanRatioStat = document.getElementById('human-ratio-stat');
+    const paddingStat = document.getElementById('padding-stat');
+    const modernCss = document.getElementById('modern-css');
+    const wrapperCss = document.getElementById('wrapper-css');
+    const fallbackCss = document.getElementById('fallback-css');
+    const htmlExample = document.getElementById('html-example');
+
+    function gcd(a, b) {
+      a = Math.abs(Math.round(a));
+      b = Math.abs(Math.round(b));
+      while (b) {
+        const t = b;
+        b = a % b;
+        a = t;
+      }
+      return a || 1;
+    }
+
+    function formatNumber(value) {
+      return Number.isInteger(value) ? `${value}` : value.toFixed(4).replace(/0+$/, '').replace(/\.$/, '');
+    }
+
+    function update() {
+      const w = Math.max(1, parseFloat(ratioW.value) || 1);
+      const h = Math.max(1, parseFloat(ratioH.value) || 1);
+      const divisor = gcd(w, h);
+      const simpleW = w / divisor;
+      const simpleH = h / divisor;
+      const cssRatio = `${formatNumber(simpleW)} / ${formatNumber(simpleH)}`;
+      const humanRatio = `${formatNumber(simpleW)}:${formatNumber(simpleH)}`;
+      const padding = (simpleH / simpleW) * 100;
+
+      cssRatioStat.textContent = cssRatio;
+      humanRatioStat.textContent = humanRatio;
+      paddingStat.textContent = `${padding.toFixed(4).replace(/0+$/, '').replace(/\.$/, '')}%`;
+      previewLabel.textContent = humanRatio;
+
+      modernCss.textContent = `.media {\n  aspect-ratio: ${cssRatio};\n  width: 100%;\n}`;
+      wrapperCss.textContent = `.media {\n  aspect-ratio: ${cssRatio};\n  width: 100%;\n  overflow: hidden;\n}\n\n.media > img,\n.media > video,\n.media > iframe {\n  width: 100%;\n  height: 100%;\n  object-fit: cover;\n}`;
+      fallbackCss.textContent = `.media-fallback {\n  position: relative;\n  width: 100%;\n  padding-top: ${padding.toFixed(4).replace(/0+$/, '').replace(/\.$/, '')}%;\n}\n\n.media-fallback > * {\n  position: absolute;\n  inset: 0;\n  width: 100%;\n  height: 100%;\n}`;
+      htmlExample.textContent = `<div class="media">\n  <img src="/image.jpg" alt="" />\n</div>`;
+
+      const ratio = simpleW / simpleH;
+      const maxW = 240;
+      const maxH = 180;
+      let boxW;
+      let boxH;
+      if (ratio >= maxW / maxH) {
+        boxW = maxW;
+        boxH = Math.max(28, Math.round(maxW / ratio));
+      } else {
+        boxH = maxH;
+        boxW = Math.max(28, Math.round(maxH * ratio));
+      }
+      previewBox.style.width = `${boxW}px`;
+      previewBox.style.height = `${boxH}px`;
+    }
+
+    ratioW.addEventListener('input', update);
+    ratioH.addEventListener('input', update);
+    document.getElementById('swap-ratio').addEventListener('click', () => {
+      const nextW = ratioH.value;
+      ratioH.value = ratioW.value;
+      ratioW.value = nextW;
+      update();
+    });
+    document.querySelectorAll('[data-preset-w]').forEach((button) => {
+      button.addEventListener('click', () => {
+        ratioW.value = button.getAttribute('data-preset-w');
+        ratioH.value = button.getAttribute('data-preset-h');
+        update();
+      });
+    });
+    document.querySelectorAll('[data-copy-target]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.getAttribute('data-copy-target'));
+        await navigator.clipboard?.writeText(target.textContent);
+        const original = button.textContent;
+        button.textContent = 'Copied';
+        setTimeout(() => { button.textContent = original; }, 1000);
+      });
+    });
+    update();
+  </script>
+</Layout>
