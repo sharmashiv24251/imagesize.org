@@ -1,0 +1,168 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Breadcrumb from '../ui/Breadcrumb.astro';
+import FAQ from '../ui/FAQ.astro';
+import RelatedTools from '../ui/RelatedTools.astro';
+import ImageCompressorIsland from '../islands/ImageCompressorIsland';
+import { buildBreadcrumbLD, buildFAQLD, buildHowToLD, buildSoftwareApplicationLD, buildWebApplicationLD } from '../../lib/seo';
+import { absoluteUrl, site } from '../../lib/site';
+import { getRelatedCompressorPages, type CompressorPage } from '../../lib/compressorPages';
+
+interface Props {
+  page: CompressorPage;
+  canonicalSlug?: string;
+}
+
+const { page, canonicalSlug = page.slug } = Astro.props;
+const canonicalUrl = absoluteUrl(`/${canonicalSlug}`);
+const relatedPages = getRelatedCompressorPages(page);
+
+const faqs = [
+  {
+    question: `How do I ${page.h1.toLowerCase()}?`,
+    answer: `Upload an image, keep the preloaded ${page.targetKb} KB target or adjust it, choose ${page.format.toUpperCase()}, then download the compressed result. Processing runs locally in your browser.`,
+  },
+  {
+    question: 'Are my images uploaded?',
+    answer: `No. ${site.name} compresses images locally with browser Canvas. Your image does not leave your device.`,
+  },
+  {
+    question: 'What format should I use?',
+    answer: page.format === 'webp'
+      ? 'WebP usually creates the smallest files for websites and modern apps. Use JPG if the destination form or platform does not accept WebP.'
+      : 'JPG is widely accepted by forms, emails, marketplaces, and exam portals. Use WebP when your destination supports it and you want a smaller file.',
+  },
+  {
+    question: 'What if the target file size cannot be reached?',
+    answer: 'The tool shows the closest result it can make. To go smaller, reduce max width or height, switch to WebP or JPG, or start with a simpler image.',
+  },
+];
+
+const jsonLD = [
+  buildWebApplicationLD(page.h1, page.description, canonicalUrl),
+  buildSoftwareApplicationLD(page.h1, page.description, canonicalUrl, 'MultimediaApplication'),
+  buildFAQLD(faqs),
+  buildBreadcrumbLD([
+    { name: 'Home', url: site.url },
+    { name: page.h1, url: canonicalUrl },
+  ]),
+  buildHowToLD(
+    page.h1,
+    page.description,
+    [
+      { name: 'Upload your image', text: 'Drop an image into the compressor or click to browse.' },
+      { name: 'Use the preset target', text: `The page starts with a ${page.targetKb} KB target and ${page.format.toUpperCase()} output.` },
+      { name: 'Adjust format or dimensions', text: 'Choose JPG, WebP, or PNG, and optionally cap width or height.' },
+      { name: 'Download', text: 'Download the compressed image after processing finishes.' },
+    ],
+    canonicalUrl
+  ),
+];
+
+const relatedTools = [
+  {
+    title: 'Crop & Resize',
+    description: 'Fix image dimensions before compressing.',
+    href: `/crop-and-resize${page.maxWidth && page.maxHeight ? `?tw=${page.maxWidth}&th=${page.maxHeight}` : ''}`,
+    icon: '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>',
+  },
+  {
+    title: 'Image Size For',
+    description: 'Find platform, form, print, and social image sizes.',
+    href: '/image-size-for',
+    icon: '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>',
+  },
+  {
+    title: 'Image Analyzer',
+    description: 'Check file type, dimensions, ratio, and file size.',
+    href: '/image',
+    icon: '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>',
+  },
+];
+---
+
+<Layout title={page.title} description={page.description} canonicalUrl={canonicalUrl} jsonLD={jsonLD}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <Breadcrumb items={[
+      { name: 'Home', url: '/' },
+      { name: page.h1, url: `/${canonicalSlug}` },
+    ]} />
+
+    <div class="mb-8 max-w-3xl">
+      <div class="flex flex-wrap items-center gap-2 mb-3">
+        <span class="text-[11px] px-2 py-1 rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/20">{page.audience}</span>
+        <span class="text-[11px] px-2 py-1 rounded-full bg-surface border border-border-dark text-text-muted">{page.targetKb} KB target</span>
+        <span class="text-[11px] px-2 py-1 rounded-full bg-surface border border-border-dark text-text-muted">No upload</span>
+      </div>
+      <h1 class="text-3xl sm:text-4xl font-bold text-text-primary tracking-tight mb-3">
+        {page.h1}
+      </h1>
+      <p class="text-text-muted">
+        {page.intro} Everything runs locally in your browser, so your file stays on your device.
+      </p>
+    </div>
+
+    <section class="mb-12">
+      <ImageCompressorIsland
+        client:load
+        initialTargetKb={page.targetKb}
+        initialFormat={page.format}
+        initialMaxWidth={page.maxWidth}
+        initialMaxHeight={page.maxHeight}
+        buttonLabel={page.buttonLabel || page.h1}
+      />
+    </section>
+
+    <section class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-6 max-w-5xl mx-auto mb-12">
+      <div class="bg-surface rounded-xl border border-border-dark/50 p-5">
+        <h2 class="text-xl font-semibold text-text-primary mb-4">{page.h1} Tips</h2>
+        <div class="text-sm text-text-muted space-y-4 leading-relaxed">
+          <p>
+            File size depends on dimensions, format, image detail, and export quality. Reducing pixel dimensions usually saves the most space, while WebP and JPG quality settings help fine-tune the final KB.
+          </p>
+          <ul class="space-y-2">
+            {page.notes.map((note) => (
+              <li class="flex gap-2">
+                <span class="text-teal-400">-</span>
+                <span>{note}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      <aside class="space-y-4">
+        <div class="bg-surface rounded-xl border border-border-dark/50 p-4">
+          <h2 class="text-xs text-text-muted uppercase tracking-wider mb-3">Also Searchable As</h2>
+          <div class="flex flex-wrap gap-2">
+            {page.aliases.map((alias) => (
+              <span class="text-[11px] px-2 py-1 rounded-full bg-bg border border-border-dark text-text-muted">{alias}</span>
+            ))}
+          </div>
+        </div>
+
+        <div class="bg-surface rounded-xl border border-border-dark/50 p-4">
+          <h2 class="text-xs text-text-muted uppercase tracking-wider mb-3">Related Compressors</h2>
+          <div class="space-y-2">
+            {relatedPages.map((item) => (
+              <a href={`/${item.slug}`} class="block rounded-lg border border-border-dark/50 px-3 py-2 text-sm hover:border-teal-500/30 hover:bg-surface-2/30 transition-colors">
+                <span class="block text-text-primary">{item.h1}</span>
+                <span class="font-mono text-xs text-text-muted">{item.targetKb} KB · {item.format.toUpperCase()}</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="max-w-3xl mx-auto mb-12">
+      <h2 class="text-xl font-semibold text-text-primary mb-4">Frequently Asked Questions</h2>
+      <FAQ items={faqs} />
+    </section>
+
+    <section class="max-w-3xl mx-auto mb-8">
+      <h2 class="text-xl font-semibold text-text-primary mb-4">Related Tools</h2>
+      <RelatedTools tools={relatedTools} />
+    </section>
+  </div>
+</Layout>

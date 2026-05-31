@@ -1,0 +1,8 @@
+---
+import CompressorLanding from '../components/pages/CompressorLanding.astro';
+import { getCompressorPage } from '../lib/compressorPages';
+
+const page = getCompressorPage('compress-image-to-20kb')!;
+---
+
+<CompressorLanding page={page} />

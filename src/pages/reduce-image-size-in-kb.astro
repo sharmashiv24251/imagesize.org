@@ -4,12 +4,29 @@ import Breadcrumb from '../components/ui/Breadcrumb.astro';
 import FAQ from '../components/ui/FAQ.astro';
 import RelatedTools from '../components/ui/RelatedTools.astro';
 import ImageCompressorIsland from '../components/islands/ImageCompressorIsland';
-import { buildBreadcrumbLD, buildFAQLD, buildHowToLD, buildWebApplicationLD } from '../lib/seo';
+import { buildBreadcrumbLD, buildFAQLD, buildHowToLD, buildSoftwareApplicationLD, buildWebApplicationLD } from '../lib/seo';
 import { absoluteUrl, site } from '../lib/site';
+import { compressorPages } from '../lib/compressorPages';
 
-const title = 'Reduce Image Size in KB: Free Online Image Compressor';
-const description = 'Reduce image size to a target KB in your browser. Compress JPG, PNG, and WebP files with optional max width and height. No uploads.';
+const title = 'Reduce Image Size in KB: Free No-Upload Image Compressor';
+const description = 'Reduce image size to a target KB in your browser. Compress JPG, PNG, and WebP files for forms, email, websites, exams, and uploads. No uploads.';
 const canonicalUrl = absoluteUrl('/reduce-image-size-in-kb');
+const popularCompressorPages = compressorPages.filter((page) =>
+  [
+    'compress-image-to-20kb',
+    'compress-image-to-50kb',
+    'compress-image-to-100kb',
+    'compress-image-to-200kb',
+    'compress-image-to-500kb',
+    'compress-image-to-1mb',
+    'compress-image-for-email',
+    'compress-image-for-website',
+    'compress-image-without-uploading',
+    'compress-photo-for-ssc',
+    'compress-passport-photo',
+    'compress-signature-image',
+  ].includes(page.slug)
+);
 
 const faqs = [
   {
@@ -32,6 +49,7 @@ const faqs = [
 
 const jsonLD = [
   buildWebApplicationLD('Reduce Image Size in KB', description, canonicalUrl),
+  buildSoftwareApplicationLD('Reduce Image Size in KB', description, canonicalUrl, 'MultimediaApplication'),
   buildFAQLD(faqs),
   buildBreadcrumbLD([
     { name: 'Home', url: site.url },
@@ -78,7 +96,7 @@ const relatedTools = [
         Reduce Image Size in KB
       </h1>
       <p class="text-text-muted">
-        Compress an image to a target file size for forms, uploads, job portals, social platforms, and email. Everything runs locally in your browser.
+        Compress an image to a target file size for forms, uploads, job portals, social platforms, websites, and email. Everything runs locally in your browser, so your file stays on your device.
       </p>
     </div>
 
@@ -95,6 +113,18 @@ const relatedTools = [
         <p>
           This compressor tries multiple quality levels to get under your target KB. If the image cannot reach the target cleanly, it keeps the closest result and tells you what to adjust.
         </p>
+      </div>
+    </div>
+
+    <div class="max-w-3xl mx-auto mb-12">
+      <h2 class="text-xl font-semibold text-text-primary mb-4">Popular Image Compression Searches</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {popularCompressorPages.map((page) => (
+          <a href={`/${page.slug}`} class="rounded-xl border border-border-dark/50 bg-surface px-4 py-3 hover:border-teal-500/30 hover:bg-surface-2/30 transition-colors">
+            <span class="block text-sm font-medium text-text-primary">{page.h1}</span>
+            <span class="block text-xs text-text-muted mt-1">{page.targetKb} KB target · {page.format.toUpperCase()} · {page.audience}</span>
+          </a>
+        ))}
       </div>
     </div>
 

@@ -2,6 +2,14 @@ import { useCallback, useMemo, useRef, useState } from 'preact/hooks';
 
 type OutputFormat = 'jpeg' | 'webp' | 'png';
 
+interface ImageCompressorIslandProps {
+  initialTargetKb?: number;
+  initialFormat?: OutputFormat;
+  initialMaxWidth?: number;
+  initialMaxHeight?: number;
+  buttonLabel?: string;
+}
+
 interface CompressionResult {
   url: string;
   blob: Blob;
@@ -42,12 +50,18 @@ function canvasToBlob(canvas: HTMLCanvasElement, mime: string, quality?: number)
   });
 }
 
-export default function ImageCompressorIsland() {
+export default function ImageCompressorIsland({
+  initialTargetKb = 250,
+  initialFormat = 'webp',
+  initialMaxWidth,
+  initialMaxHeight,
+  buttonLabel = 'Reduce Image Size',
+}: ImageCompressorIslandProps) {
   const [file, setFile] = useState<File | null>(null);
-  const [targetKb, setTargetKb] = useState(250);
-  const [format, setFormat] = useState<OutputFormat>('webp');
-  const [maxWidth, setMaxWidth] = useState('');
-  const [maxHeight, setMaxHeight] = useState('');
+  const [targetKb, setTargetKb] = useState(initialTargetKb);
+  const [format, setFormat] = useState<OutputFormat>(initialFormat);
+  const [maxWidth, setMaxWidth] = useState(initialMaxWidth ? `${initialMaxWidth}` : '');
+  const [maxHeight, setMaxHeight] = useState(initialMaxHeight ? `${initialMaxHeight}` : '');
   const [isWorking, setIsWorking] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState<CompressionResult | null>(null);
@@ -243,7 +257,7 @@ export default function ImageCompressorIsland() {
             onClick={compress}
             class="w-full px-4 py-2.5 bg-teal-500 hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors"
           >
-            {isWorking ? 'Compressing...' : 'Reduce Image Size'}
+            {isWorking ? 'Compressing...' : buttonLabel}
           </button>
         </div>
       </div>

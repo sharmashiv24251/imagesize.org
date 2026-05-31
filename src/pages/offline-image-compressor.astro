@@ -1,0 +1,8 @@
+---
+import CompressorLanding from '../components/pages/CompressorLanding.astro';
+import { getCompressorPage } from '../lib/compressorPages';
+
+const page = getCompressorPage('offline-image-compressor')!;
+---
+
+<CompressorLanding page={page} />
