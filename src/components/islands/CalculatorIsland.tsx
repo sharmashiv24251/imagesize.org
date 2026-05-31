@@ -156,10 +156,11 @@ export default function CalculatorIsland() {
   }, []);
 
   const handleWidthChange = useCallback((e: Event) => {
-    const val = parseInt((e.target as HTMLInputElement).value, 10);
+    const raw = (e.target as HTMLInputElement).value;
+    const val = raw === '' ? 0 : parseInt(raw, 10);
     if (!isNaN(val)) {
       setWidth(val);
-      if (mode === 'ratio-to-dim' && lockDim === 'width') {
+      if (mode === 'ratio-to-dim' && lockDim === 'width' && val > 0) {
         if (debounceRef.current) clearTimeout(debounceRef.current);
         debounceRef.current = setTimeout(() => {
           setHeight(resizeToDimension(ratioW, ratioH, val, 'width'));
@@ -169,10 +170,11 @@ export default function CalculatorIsland() {
   }, [mode, lockDim, ratioW, ratioH]);
 
   const handleHeightChange = useCallback((e: Event) => {
-    const val = parseInt((e.target as HTMLInputElement).value, 10);
+    const raw = (e.target as HTMLInputElement).value;
+    const val = raw === '' ? 0 : parseInt(raw, 10);
     if (!isNaN(val)) {
       setHeight(val);
-      if (mode === 'ratio-to-dim' && lockDim === 'height') {
+      if (mode === 'ratio-to-dim' && lockDim === 'height' && val > 0) {
         if (debounceRef.current) clearTimeout(debounceRef.current);
         debounceRef.current = setTimeout(() => {
           setWidth(resizeToDimension(ratioW, ratioH, val, 'height'));
@@ -346,22 +348,47 @@ export default function CalculatorIsland() {
             <div class="p-4 bg-surface rounded-xl border border-border-dark/50">
               <h3 class="text-xs text-text-muted uppercase tracking-wider mb-3">Nearest Common Ratios</h3>
               <div class="space-y-2">
-                {nearest.map((match, i) => (
-                  <div
-                    key={match.ratio.label}
-                    class={`flex items-center justify-between py-2 px-3 rounded-lg transition-colors ${
-                      i === 0 ? 'bg-teal-500/5 border border-teal-500/20' : 'hover:bg-surface-2'
-                    }`}
-                  >
-                    <div class="flex items-center gap-3">
-                      <span class="font-mono text-sm text-text-primary font-medium">{match.ratio.label}</span>
-                      <ConfidenceBadge confidence={match.confidence} />
-                    </div>
-                    <span class="text-xs font-mono text-text-muted">
-                      {match.difference === 0 ? 'exact match' : `${match.difference}% off`}
-                    </span>
-                  </div>
-                ))}
+                {nearest.map((match, i) => {
+                  // Compute target dimensions: keep the larger dimension, compute the other
+                  const targetW = width >= height
+                    ? width
+                    : resizeToDimension(match.ratio.w, match.ratio.h, height, 'height');
+                  const targetH = width >= height
+                    ? resizeToDimension(match.ratio.w, match.ratio.h, width, 'width')
+                    : height;
+
+                  return (
+                    <button
+                      key={match.ratio.label}
+                      onClick={() => {
+                        setWidth(targetW);
+                        setHeight(targetH);
+                      }}
+                      class={`w-full flex items-center justify-between py-2.5 px-3 rounded-lg transition-all duration-150 cursor-pointer text-left ${
+                        i === 0
+                          ? 'bg-teal-500/5 border border-teal-500/20 hover:bg-teal-500/10'
+                          : 'hover:bg-surface-2 border border-transparent'
+                      }`}
+                      title={`Apply ${match.ratio.label} → ${targetW}×${targetH}`}
+                    >
+                      <div class="flex items-center gap-3">
+                        <span class="font-mono text-sm text-text-primary font-medium w-12">{match.ratio.label}</span>
+                        <ConfidenceBadge confidence={match.confidence} />
+                        <span class="text-[11px] font-mono text-text-muted/60">
+                          {targetW} × {targetH}
+                        </span>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <span class="text-xs font-mono text-text-muted">
+                          {match.difference === 0 ? 'exact match' : `${match.difference}% off`}
+                        </span>
+                        <svg class="w-3.5 h-3.5 text-text-muted/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}

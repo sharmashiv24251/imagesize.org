@@ -137,11 +137,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Light mode */
-.light body {
-  background-color: var(--color-stone-50);
-  color: var(--color-stone-700);
-}
+
 
 /* ─── Tabular Nums for all results ─── */
 .tabular-nums {

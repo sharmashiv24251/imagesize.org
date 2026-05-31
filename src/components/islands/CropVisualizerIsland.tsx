@@ -53,6 +53,7 @@ export default function CropVisualizerIsland() {
   const [targetW, setTargetW] = useState(16);
   const [targetH, setTargetH] = useState(9);
   const [mode, setMode] = useState<CropMode>('crop');
+  const [padFill, setPadFill] = useState<'blur' | 'color'>('blur');
   const [padColor, setPadColor] = useState('#000000');
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -91,6 +92,33 @@ export default function CropVisualizerIsland() {
     if (file && file.type.startsWith('image/')) loadImage(file);
   }, [loadImage]);
 
+  // Helper: draw blurred + darkened background that covers the full canvas
+  const drawBlurredBackground = useCallback((
+    ctx: CanvasRenderingContext2D,
+    img: HTMLImageElement,
+    canvasW: number,
+    canvasH: number
+  ) => {
+    // Scale image to cover entire canvas (like CSS background-size: cover)
+    const imgRatio = img.naturalWidth / img.naturalHeight;
+    const canvasRatio = canvasW / canvasH;
+    let sx = 0, sy = 0, sw = img.naturalWidth, sh = img.naturalHeight;
+    if (imgRatio > canvasRatio) {
+      sw = img.naturalHeight * canvasRatio;
+      sx = (img.naturalWidth - sw) / 2;
+    } else {
+      sh = img.naturalWidth / canvasRatio;
+      sy = (img.naturalHeight - sh) / 2;
+    }
+
+    // Draw stretched image as background
+    ctx.save();
+    ctx.filter = 'blur(30px) brightness(0.35)';
+    // Draw slightly larger to avoid blur edge artifacts
+    ctx.drawImage(img, sx, sy, sw, sh, -20, -20, canvasW + 40, canvasH + 40);
+    ctx.restore();
+  }, []);
+
   // Render preview on canvas
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -121,8 +149,13 @@ export default function CropVisualizerIsland() {
       canvas.width = Math.round(pad.totalW * scale);
       canvas.height = Math.round(pad.totalH * scale);
 
-      ctx.fillStyle = padColor;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      if (padFill === 'blur') {
+        // Blurred + darkened image background
+        drawBlurredBackground(ctx, img, canvas.width, canvas.height);
+      } else {
+        ctx.fillStyle = padColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
       ctx.drawImage(
         img,
         0, 0, imgWidth, imgHeight,
@@ -130,7 +163,7 @@ export default function CropVisualizerIsland() {
         Math.round(imgWidth * scale), Math.round(imgHeight * scale)
       );
     } else {
-      // Letterbox
+      // Letterbox — always black
       const pad = calculatePadding(imgWidth, imgHeight, targetW, targetH);
       scale = Math.min(maxPreview / pad.totalW, maxPreview / pad.totalH, 1);
       canvas.width = Math.round(pad.totalW * scale);
@@ -145,7 +178,7 @@ export default function CropVisualizerIsland() {
         Math.round(imgWidth * scale), Math.round(imgHeight * scale)
       );
     }
-  }, [imageSrc, imgWidth, imgHeight, targetW, targetH, mode, padColor]);
+  }, [imageSrc, imgWidth, imgHeight, targetW, targetH, mode, padFill, padColor, drawBlurredBackground]);
 
   const handleExport = useCallback(() => {
     const canvas = canvasRef.current;
@@ -166,8 +199,14 @@ export default function CropVisualizerIsland() {
       const pad = calculatePadding(imgWidth, imgHeight, targetW, targetH);
       exportCanvas.width = pad.totalW;
       exportCanvas.height = pad.totalH;
-      ctx.fillStyle = mode === 'letterbox' ? '#000000' : padColor;
-      ctx.fillRect(0, 0, pad.totalW, pad.totalH);
+
+      if (mode === 'padding' && padFill === 'blur') {
+        // Blurred + darkened background at full resolution
+        drawBlurredBackground(ctx, img, pad.totalW, pad.totalH);
+      } else {
+        ctx.fillStyle = mode === 'letterbox' ? '#000000' : padColor;
+        ctx.fillRect(0, 0, pad.totalW, pad.totalH);
+      }
       ctx.drawImage(img, 0, 0, imgWidth, imgHeight, pad.left, pad.top, imgWidth, imgHeight);
     }
 
@@ -175,7 +214,7 @@ export default function CropVisualizerIsland() {
     link.download = `cropped-${targetW}x${targetH}.png`;
     link.href = exportCanvas.toDataURL('image/png');
     link.click();
-  }, [imgWidth, imgHeight, targetW, targetH, mode, padColor]);
+  }, [imgWidth, imgHeight, targetW, targetH, mode, padFill, padColor, drawBlurredBackground]);
 
   const crop = imgWidth > 0 ? calculateCrop(imgWidth, imgHeight, targetW, targetH) : null;
   const pad = imgWidth > 0 ? calculatePadding(imgWidth, imgHeight, targetW, targetH) : null;
@@ -225,14 +264,38 @@ export default function CropVisualizerIsland() {
 
           {mode === 'padding' && (
             <div class="flex items-center gap-2 ml-3">
-              <span class="text-xs text-text-muted">Pad color:</span>
-              <input
-                type="color"
-                value={padColor}
-                onInput={(e) => setPadColor((e.target as HTMLInputElement).value)}
-                class="w-8 h-8 rounded-md border border-border-dark cursor-pointer"
-                id="pad-color"
-              />
+              <span class="text-xs text-text-muted">Fill:</span>
+              <div class="flex items-center gap-0.5 p-0.5 bg-surface rounded-md border border-border-dark/50">
+                <button
+                  onClick={() => setPadFill('blur')}
+                  class={`px-2 py-1 text-[11px] rounded transition-all ${
+                    padFill === 'blur'
+                      ? 'bg-teal-500/15 text-teal-400 font-medium'
+                      : 'text-text-muted hover:text-text-primary'
+                  }`}
+                >
+                  Blur
+                </button>
+                <button
+                  onClick={() => setPadFill('color')}
+                  class={`px-2 py-1 text-[11px] rounded transition-all ${
+                    padFill === 'color'
+                      ? 'bg-teal-500/15 text-teal-400 font-medium'
+                      : 'text-text-muted hover:text-text-primary'
+                  }`}
+                >
+                  Color
+                </button>
+              </div>
+              {padFill === 'color' && (
+                <input
+                  type="color"
+                  value={padColor}
+                  onInput={(e) => setPadColor((e.target as HTMLInputElement).value)}
+                  class="w-7 h-7 rounded border border-border-dark cursor-pointer"
+                  id="pad-color"
+                />
+              )}
             </div>
           )}
         </div>

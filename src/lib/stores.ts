@@ -43,8 +43,8 @@ export const $nearestRatios = computed([$width, $height], (w, h) => {
   return nearestCommonRatios(w, h, 5);
 });
 
-/** Theme state */
-export const $theme = atom<'dark' | 'light'>('dark');
+
+
 
 /** Image data for cross-tool sharing */
 export const $imageData = atom<{
