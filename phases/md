@@ -1,0 +1,363 @@
+# aspectratio.dev — Build & Execution Plan (Phase-by-Phase)
+
+> Companion to `product.md`. That file is **what** we're building. This file is **how and in what order** — every phase, every workstream, in detail. No code here on purpose; this is the playbook you (or Claude Code) follow.
+
+---
+
+## How to read this document
+
+Each phase is broken into the same **six workstreams** so nothing falls through the cracks:
+
+1. **Architecture & infra** — the plumbing decided/built in this phase.
+2. **Design & UX** — what gets designed or refined.
+3. **Build** — the actual tools/pages/components shipped (described, not coded).
+4. **Content & SEO** — pages, copy, schema, indexing rules.
+5. **Analytics & QA** — what we measure and how we verify quality.
+6. **Monetization & growth** — ads, affiliate, links, Pro/API (only where relevant).
+
+Every phase ends with **Exit criteria** (the bar to move on), **Out of scope** (the scope guard — what we deliberately do NOT do yet), and **Risks**.
+
+---
+
+## Phase overview
+
+| Phase | Theme | Target window | Goal in one line |
+|---|---|---|---|
+| **0** | Foundation | Wk 1–2 (Jun 7–20) | Brand, design system, architecture, analytics, SEO infra — all rails laid. |
+| **1** | Hero tools MVP | Wk 3–5 (Jun 21–Jul 11) | A launchable, beautiful, fast core: calculator + image analyzer + crop visualizer. |
+| **2** | Dev cluster + Tier 1 | Wk 6–7 (Jul 12–25) | Win the developer/designer search cluster; ship the embeddable widget + npm package. |
+| **3** | Reference + print + Tier 2 | Wk 8–9 (Jul 26–Aug 8) | Device/resolution data, PPI/print cluster, platform-size pages. |
+| **4** | Monetization | Wk 10–11 (Aug 9–22) | AdSense (clean), affiliate, Pro tier — without hurting UX or CWV. |
+| **5** | Scale + API + locales | Wk 12+ | Controlled Tier-3 release, paid API, localization. |
+| **6** | Growth loop | Ongoing | Measure, prune, expand, link-build. Never "done." |
+
+**Sequencing logic:** authority before volume. We build link-worthy tools first (Phases 1–2), earn trust and engagement, *then* expand programmatically (Phase 5). Launching thin pages early is what gets new domains sandboxed — so we don't.
+
+---
+
+## Cross-cutting rules (apply in every phase)
+
+- **Speed is a gate, not a goal.** No page ships if it breaks the performance budget (LCP < 1.5s, CLS < 0.05, INP < 150ms, Lighthouse mobile ≥ 95).
+- **A page exists only if it carries a real tool + unique content.** No empty doorway pages, ever.
+- **Privacy by default.** Image work stays client-side; say so on-page.
+- **One interactive color (teal), gold used rarely.** Design discipline holds across every new page.
+- **Indexing tier is decided at creation**, not after — every new page is tagged Tier 1 / 2 / 3 and gets the right robots/sitemap treatment immediately.
+
+---
+
+# Phase 0 — Foundation
+
+**Goal:** Lay every rail so that from Phase 1 on, building a new tool page is fast, consistent, and automatically SEO- and performance-correct. Nothing user-facing ships yet except maybe a holding page.
+
+**Why first:** Decisions made here (tokens, page template, schema helpers, analytics events) get reused on every page forever. Getting them right once saves rework on hundreds of pages later.
+
+### Architecture & infra
+- Stand up the Astro + TypeScript (strict) project with static output; pick the host (Cloudflare Pages) and wire CI so every push deploys a preview.
+- Decide the island strategy: Astro for static shell, Preact islands for interactivity, nanostores for any cross-island shared state. Document when something is "static" vs "an island."
+- Set up the content layer: define the typed collections (ratios, devices, resolutions, platforms, paperSizes) with their validation schemas. Even if data is sparse now, the shapes are locked.
+- Create the shared library boundary: a single pure-function math module (ratio simplify, nearest-ratio, resize, PPI) that everything imports. Pure, testable, no UI.
+- Install performance/SEO infra: sitemap generation with tier-aware exclusion, off-main-thread loading for third-party scripts, image/asset pipeline, font subsetting.
+
+### Design & UX
+- Finalize the design system from `product.md` into a living reference: the full color token set (stone neutrals, teal, gold, semantic), typography (Geist + Geist Mono, tabular numbers), spacing/radius/shadow/motion scales, dark + light themes.
+- Build the core component inventory as designs/specs: buttons, inputs with inline copy, segmented control, the animated proportion-preview rectangle, drop zone, crop canvas shell, compatibility cell, result-stat, FAQ accordion, breadcrumb, related-tools module, code block, theme toggle.
+- Design the **universal page template** once: header → H1 → intro → tool slot → "common results" link strip → explainer → FAQ → related tools → last-updated → footer. Every future page is a fill-in of this.
+- Verify contrast for both themes and define the reduced-motion behavior.
+
+### Content & SEO
+- Build the SEO helper layer conceptually: per-page title/description templating, canonical logic, JSON-LD builders for WebApplication/SoftwareApplication, FAQPage, BreadcrumbList, HowTo, ItemList.
+- Set the indexing policy in code: a page declares its tier and the system applies the correct robots meta + sitemap inclusion automatically.
+- Plan the sitemap index split (tools / guides / locales) even before there's much to put in it.
+- Draft the keyword cluster map (from `product.md` §7.0) into a working backlog: every planned page mapped to its head term and intent.
+
+### Analytics & QA
+- Wire privacy-friendly analytics off the main thread.
+- Implement the event taxonomy as a typed helper so events are consistent from day one: preset_select, dimension_input, copy_dimensions, image_upload, crop_export, faq_expand, next_tool_click, etc.
+- Establish the QA checklist (the Definition of Done from `product.md` §15) as the gate every page must pass.
+- Connect Search Console + the analytics dashboard; set up Core Web Vitals monitoring.
+
+### Monetization & growth
+- Nothing live. But: reserve the ad-slot dimensions in the page template now (empty, fixed-size containers) so adding ads later causes zero layout shift. Decide affiliate partners to approach later (Canva, Adobe Express, CapCut, stock).
+
+### Exit criteria
+- A new blank tool page can be created from the template in minutes and automatically gets correct theming, SEO meta, schema, analytics hooks, and tier handling.
+- Design system and component specs are approved and documented.
+- Math module exists and is unit-tested.
+- A throwaway demo page scores ≥ 95 Lighthouse mobile with the template + a placeholder tool.
+
+### Out of scope (don't do yet)
+- Any real tool logic, any indexable content pages, any ads, any data-heavy collections fully populated.
+
+### Risks
+- **Over-engineering the foundation.** Cap Phase 0 at 2 weeks. The template + tokens + math module + analytics are enough; resist building abstractions for features that don't exist yet.
+
+---
+
+# Phase 1 — Hero Tools MVP (the launchable product)
+
+**Goal:** Ship the three tools that *are* the product's reason to exist, polished to "best on the internet" quality, on a handful of beautifully executed pages. This is the version you can actually launch and start earning links/traffic with.
+
+**Why now:** These are the link-worthy, screenshot-worthy tools that earn the authority everything else depends on. They must be excellent before anything is scaled.
+
+### Architecture & infra
+- Implement the math module's full surface for ratios: simplify via GCD, decimal, orientation, nearest-common-ratio ranking with % difference and confidence.
+- Build the client-side image pipeline: read a dropped/selected file entirely in the browser (Canvas), extract resolution/type/size, never upload. Render crop/padding/letterbox previews on canvas.
+- Wire shared state so width/height entered in the calculator can flow into the visualizer and vice versa.
+
+### Design & UX
+- Design and refine the **Universal Calculator** experience: live on-keystroke results, mode switch (W×H→ratio / ratio+one dimension→other / lock-ratio scaling), preset chips for the common ratios, the animated proportion-preview rectangle, copy-on-every-value.
+- Design the **Image Analyzer + Compatibility Grid**: the upload affordance, the result panel (resolution, ratio, orientation, file size/type), and the platform-compatibility grid using the green/amber/red semantics (fits / needs crop / wrong shape) with exact target numbers and a one-click jump into the crop view.
+- Design the **Crop / Padding / Letterbox Visualizer**: draggable, ratio-locked crop box over the user's real image; padding mode with background color/blur; letterbox mode with bar thickness readout; export/download of the result. Keyboard-operable crop box.
+- Polish micro-interactions: number cross-fades, springy crop drag, copy confirmations, empty/error states (bad file type, huge file).
+
+### Build (pages shipped)
+- Home (`/`) — leads with the universal calculator and routes to the hero tools.
+- `/calculator` — the canonical calculator hub (calculator + nearest-ratio).
+- `/image` — analyzer + compatibility grid (+ optional single-image compress/export).
+- `/crop` — the visualizer.
+- `/resize` — resize without distortion + convert-to-target with crop-vs-pad recommendation + vertical converter.
+
+### Content & SEO
+- Write genuinely useful, unique on-page content for each hero page following the template: what the tool does, who it's for, real examples, 3–6 FAQs.
+- Emit correct schema per page (WebApplication + FAQPage + BreadcrumbList; HowTo on resize/crop).
+- Generate dynamic OG images that visually show the ratio/dimensions — these drive share CTR.
+- All five pages are Tier 1: indexable, in the sitemap, hand-quality.
+
+### Analytics & QA
+- Fire the relevant events (dimension_input, preset_select, copy_dimensions, image_upload, compatibility_view, crop_export).
+- Run the full DoD gate on every page: works, fast, accessible, correct schema, CWV green, both themes verified.
+- Cross-device/browser test the upload + canvas flows (mobile Safari is the usual troublemaker).
+
+### Monetization & growth
+- No ads yet — protect the launch experience. Prepare the launch assets (Product Hunt, a short demo clip of the crop visualizer, dev-community posts). The crop/compatibility tools are the hook; lead with them.
+
+### Exit criteria
+- All five pages live, each passing the DoD and the performance budget.
+- The crop visualizer and compatibility grid feel demonstrably better than any incumbent — the "would I screenshot/share this?" test passes.
+- Launch posts ready.
+
+### Out of scope (don't do yet)
+- Programmatic ratio pages, device databases, platform-size pages, ads, Pro, API.
+
+### Risks
+- **Canvas/mobile bugs** eating time — budget explicit cross-device QA.
+- **Scope creep into Phase 2** ("just one more dev tool") — hold the line; ship the five.
+
+---
+
+# Phase 2 — Developer Cluster + Tier 1 Ratio Pages + Distribution Assets
+
+**Goal:** Own the lower-competition developer/designer search cluster (the `.dev` advantage), hand-build the core per-ratio pages, and ship the two biggest distribution engines: the embeddable widget and an open-source npm package.
+
+**Why now:** Devs *link to* free dev tools, and dev queries are easier to rank for than social-media terms dominated by huge brands. This is where early authority comes from.
+
+### Architecture & infra
+- Build the small dev-tool islands behind one shared pattern (input → generated output → copy button → explainer).
+- Build the embeddable-widget delivery: a lightweight, themeable iframe build of the calculator/ratio tools served from `/embed/*`, with a copy-paste snippet and a "powered by" backlink.
+- Package the core ratio math as a standalone open-source library + CLI (separate repo), published to npm under the brand.
+
+### Design & UX
+- Design the dev-cluster page style: code-forward, mono output, prominent copy buttons, syntax-highlighted result blocks.
+- Design the embed widget's compact, responsive, themeable layout (light/dark, accent options) and the "get embed code" UX.
+- Design the per-ratio page layout (a focused calculator pre-loaded to that ratio + ratio-specific content).
+
+### Build (pages shipped)
+- Dev cluster: CSS `aspect-ratio` generator, Tailwind class generator, SVG viewBox calculator, React/Preact component snippet.
+- CSS-units cluster: px↔rem, px↔em, px→pt, px→vh/vw (with configurable root size/viewport).
+- Hand-built `/ratio/[ratio]` pages for the ~6 core ratios (16:9, 4:3, 21:9, 9:16, 1:1, 3:2): unique copy, use cases, common conversions, FAQs.
+- `/embed/*` widget endpoints.
+- Public npm package + its docs/readme.
+
+### Content & SEO
+- Write distinct, substantive copy per dev tool and per ratio page (no templated thin text — each ratio has real, different use cases and examples).
+- Internal-link the cluster tightly: ratio pages ↔ calculator ↔ dev tools ↔ comparison (when it lands).
+- Schema: SoftwareApplication + FAQPage + Breadcrumb across the cluster.
+- All Tier 1 — indexable, hand-quality.
+
+### Analytics & QA
+- Track copy_dimensions/copy_ratio, embed_copy, next_tool_click to see which tools drive recirculation.
+- QA the embed widget across host-site contexts (different page widths, CSP, dark/light parents).
+
+### Monetization & growth
+- **This is the link-building phase.** Launch the npm package and embed widget publicly. Outreach to web-dev communities, design blogs, "free dev tools" roundups, Product Hunt. Submit to relevant tool directories.
+- Still no ads — keep the dev experience pristine while you're courting links.
+
+### Exit criteria
+- Dev + CSS-units clusters and 6 ratio pages live and passing DoD.
+- Embed widget works cleanly on third-party sites; npm package published with docs.
+- First wave of organic backlinks/mentions appearing.
+
+### Out of scope
+- Ads, Pro, API, programmatic conversion pages, full device DB.
+
+### Risks
+- **Thin per-ratio pages.** If you can't write genuinely different content for a ratio, don't ship that page yet. Six excellent pages beat twenty thin ones.
+
+---
+
+# Phase 3 — Reference Databases + PPI/Print Cluster + Tier 2 Platform Pages
+
+**Goal:** Add the reference content that creates large, genuinely-useful surface area (devices, resolutions, print) and begin the social-media land grab via Tier 2 platform-size pages — each carrying a live tool, not just a number.
+
+**Why now:** With authority building, you can responsibly expand into higher-volume, more competitive terms. Reference data and the print cluster also produce strong linkable assets.
+
+### Architecture & infra
+- Populate the devices, resolutions, and paperSizes collections with clean, sourced data.
+- Build reverse-lookup logic (dimensions → device/resolution) and search/filter over the databases.
+- Build the PPI/print math (density, physical↔pixel at DPI, paper size at DPI tables) on top of the shared math module.
+- Build the platform-size page generator that pulls from the platforms collection and embeds a live "size/check/resize for this platform" tool.
+
+### Design & UX
+- Design the database browse/search experience (fast filtering, deep-link from any row into the calculator).
+- Design the PPI/print pages and the **printable DPI chart** asset (paper sizes at every DPI) to be clean enough that people want to cite/print it.
+- Design the comparison tool (overlay/side-by-side of multiple ratios at shared area or width, with shareable URL state).
+- Design the platform-size page layout so the live sizer is the hero, with the reference numbers and platform notes supporting it.
+
+### Build (pages shipped)
+- `/devices` + `/devices/[device]`, `/resolutions`.
+- PPI/print cluster: PPI calculator, pixels↔inches, cm→pixels, paper-size pages.
+- `/compare` comparison tool.
+- Tier 2 platform-size pages (start with the highest-value: YouTube thumbnail, Instagram reel/story, LinkedIn banner, X header), released gradually.
+
+### Content & SEO
+- Each platform page gets unique, useful copy + the live sizer + FAQs — this is what makes it Tier 2 (substantive) not Tier 3 (thin).
+- Reference pages use ItemList schema where appropriate.
+- Release platform pages in small batches; monitor which gain traction in Search Console before adding more.
+- Heavy internal linking: platform pages ↔ image analyzer ↔ crop ↔ resize ↔ ratio pages.
+
+### Analytics & QA
+- Track compatibility_view, crop_export from platform flows, and which platform pages convert to tool use.
+- Watch indexation and impressions per batch; prune or improve any page that stalls.
+
+### Monetization & growth
+- Distribute the printable DPI chart and reference assets for links (teacher/school resource pages, design blogs).
+- Begin lining up affiliate relationships now (you'll place them in Phase 4 on exactly these platform/resize pages, where intent is commercial).
+
+### Exit criteria
+- Device/resolution/print clusters live; comparison tool live; first batch of platform pages indexed and gaining impressions.
+- At least one reference asset earning external links.
+
+### Out of scope
+- Tier-3 conversion pages still `noindex`. API and localization not yet.
+
+### Risks
+- **Stale or wrong device/resolution data** erodes trust — source carefully and date it.
+- **Platform pages drifting toward thin** — enforce the "live tool + unique copy" rule per page.
+
+---
+
+# Phase 4 — Monetization (without wrecking the experience)
+
+**Goal:** Turn the now-meaningful traffic into revenue through a clean ad layout, contextual affiliate, and a Pro tier — while keeping CWV green and the tools unobstructed.
+
+**Why now:** Only monetize once there's traffic and the experience is proven. Ads added too early suppress the engagement/links that actually grow the site.
+
+### Architecture & infra
+- Load ads through the off-main-thread path so they don't tank INP/LCP.
+- Implement the Pro tier: auth, billing, gated features (batch analyzer, batch export, AI crop suggestions, no-ads, saved presets/projects).
+- Build the batch analyzer (upload many images → table of dimensions/ratios/compatibility → CSV export) as the flagship Pro feature.
+
+### Design & UX
+- Place ads per the placement map: one in-content unit below the fold after the first result, one desktop right-rail, one anchor unit — all in the fixed reserved slots from Phase 0 so there's zero layout shift. Never above the tool/preset chips.
+- Design the Pro upgrade surface (clean, honest, value-led) and the affiliate placements so they read as helpful recommendations, not banners.
+- Design the batch analyzer UI and the "remove ads / go Pro" affordances.
+
+### Content & SEO
+- Add contextual affiliate placements on commercial-intent pages (platform/resize/print) — Canva, Adobe Express, CapCut, stock libraries.
+- Ensure ad/affiliate additions don't change page intent or trigger layout shift; re-run CWV on every monetized template.
+
+### Analytics & QA
+- Track pro_cta_click, upgrade conversion, affiliate clicks, ad viewability, and the effect of ads on engagement/CWV.
+- A/B ad density and placement; pull back anything that hurts engagement more than it earns.
+
+### Monetization & growth
+- Revenue model as a planning frame: ~$6–11 page RPM on ratio/print intent, ~$4–7 on lower-CPC utility; treat affiliate + Pro + API as the upside, AdSense as the floor.
+- Begin building the Pro funnel (batch use case targets agencies/creators).
+
+### Exit criteria
+- Ads live with zero CLS and CWV still green; affiliate placements live on commercial pages; Pro tier launched with a working batch analyzer.
+- First revenue flowing; engagement metrics not degraded by ads.
+
+### Out of scope
+- Don't gut the free experience to push Pro. Don't add above-the-fold ads. Don't monetize the dev cluster aggressively (it's your link engine — keep it clean).
+
+### Risks
+- **Ads hurting CWV → ranking loss → less ad revenue** (the death spiral). Monitor CWV continuously; ads are the first thing to cut if vitals slip.
+
+---
+
+# Phase 5 — Scale (Tier 3), API, and Localization
+
+**Goal:** Now that the domain has authority and engagement signals, responsibly release the programmatic conversion pages, ship the paid API, and open new-language markets.
+
+**Why now:** Tier-3 dimension pages launched on day one would have sandboxed a fresh domain. Released onto an established, trusted site in monitored batches, they're a legitimate long-tail play.
+
+### Architecture & infra
+- Build the Tier-3 conversion page generator (`/convert/[from]-to-[to]`), each rendering a real working conversion tool (not just a number) with unique-enough surrounding context.
+- Ship the paid API as a separate edge service: ratio/nearest/resize endpoints, API keys, rate limiting, usage metering, simple pricing, docs.
+- Implement i18n routing, locale sitemaps, and hreflang. Translate the (small) on-page text per locale.
+
+### Design & UX
+- Design the API landing + docs experience.
+- Design the language switcher and verify the design system holds across longer translated strings.
+- Ensure conversion pages still feel like tools, not filler.
+
+### Content & SEO
+- Release Tier-3 pages in small monitored batches: publish, watch indexation/impressions, keep winners, prune or consolidate non-performers after ~6 months. Promote a page from `noindex` to indexable only when it demonstrably has demand + a working tool.
+- Localize the highest-demand languages first (let the language_switch event and search data pick them).
+- Maintain the sitemap index split (tools/guides/locales) as volume grows.
+
+### Analytics & QA
+- Track per-batch Tier-3 performance; enforce the prune rule.
+- Track API signups/usage; monitor localized-page performance separately per locale.
+
+### Monetization & growth
+- API becomes a recurring revenue stream uncorrelated with SEO volatility — the highest ceiling.
+- Localized pages open entirely new ad/affiliate markets.
+
+### Exit criteria
+- Tier-3 pages releasing in a controlled, measured cadence with a working prune loop.
+- API live with paying users.
+- At least one additional locale live and indexed.
+
+### Out of scope
+- Mass-dumping thousands of pages at once (still forbidden). Buying links (always forbidden).
+
+### Risks
+- **Programmatic over-expansion** re-triggering thin-content demotion — the batch + prune discipline is the safeguard; never abandon it.
+
+---
+
+# Phase 6 — Growth Loop (ongoing, never "done")
+
+**Goal:** Treat the live product as a system to continuously measure, prune, and expand. This is the steady-state operating rhythm after Phase 5.
+
+### The recurring loop
+- **Measure:** weekly review of Search Console (impressions, positions, CWV, rich results) and analytics (tool completion, copy/export, recirculation, conversion).
+- **Prune:** kill or merge pages that don't earn impressions/engagement after their grace period. Fewer strong pages > many weak ones.
+- **Expand:** add the next tool/cluster/locale only when data shows demand and the previous batch is healthy.
+- **Defend CWV:** re-test after every change; performance regressions are treated as bugs.
+- **Earn links continuously:** new linkable assets (charts, widgets, open-source updates), ongoing community presence — never paid/spam links.
+- **Refresh trust signals:** keep "last updated" dates honest, keep device/resolution data current.
+
+### Family expansion (optional, beyond aspectratio.dev)
+- The wider plan's heavier tools — **online ruler** (auto-detect → credit-card calibration → manual, as a guided three-state flow) and **measure-image-size** — are best as their own sister properties, cross-linked to aspectratio.dev rather than merged into it. Spin them up using the same foundation (design system, math/units modules, SEO template) once the core site is healthy.
+
+### Ongoing risks to watch
+- Google core/spam updates (keep content people-first, keep pruning thin pages).
+- Ad density creep (guard the experience that earns the traffic).
+- Data drift (devices/resolutions/platform sizes change — schedule refreshes).
+
+---
+
+## One-page summary
+
+1. **Phase 0** — build the rails (template, tokens, math, analytics, SEO infra). No user pages.
+2. **Phase 1** — ship the 3 hero tools beautifully. Launchable. The link bait.
+3. **Phase 2** — own the dev cluster; ship embed widget + npm package; hand-build core ratio pages. Earn links.
+4. **Phase 3** — reference data, PPI/print, Tier 2 platform pages (each with a live tool).
+5. **Phase 4** — monetize cleanly: ads (zero CLS), affiliate, Pro (batch).
+6. **Phase 5** — responsibly scale Tier-3, ship paid API, localize.
+7. **Phase 6** — measure → prune → expand, forever. Optionally grow the sister-tool family.
+
+*Authority before volume. Experience before ads. Data before expansion.*

@@ -1,0 +1,187 @@
+@import "tailwindcss";
+
+/* ─── Geist Fonts ─── */
+@font-face {
+  font-family: 'Geist';
+  src: url('https://cdn.jsdelivr.net/npm/geist@1.4.1/dist/fonts/geist-sans/Geist-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Geist';
+  src: url('https://cdn.jsdelivr.net/npm/geist@1.4.1/dist/fonts/geist-sans/Geist-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Geist';
+  src: url('https://cdn.jsdelivr.net/npm/geist@1.4.1/dist/fonts/geist-sans/Geist-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Geist';
+  src: url('https://cdn.jsdelivr.net/npm/geist@1.4.1/dist/fonts/geist-sans/Geist-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('https://cdn.jsdelivr.net/npm/geist@1.4.1/dist/fonts/geist-mono/GeistMono-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('https://cdn.jsdelivr.net/npm/geist@1.4.1/dist/fonts/geist-mono/GeistMono-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ─── Tailwind v4 Theme Tokens ─── */
+@theme {
+  /* Neutrals — warm "Stone" */
+  --color-stone-50: #FAFAF8;
+  --color-stone-100: #F2F1ED;
+  --color-stone-200: #E5E3DC;
+  --color-stone-300: #D2CFC4;
+  --color-stone-400: #A8A496;
+  --color-stone-500: #807C6E;
+  --color-stone-600: #5E5A4F;
+  --color-stone-700: #44413A;
+  --color-stone-800: #2A2823;
+  --color-stone-900: #1A1916;
+  --color-stone-950: #0F0E0C;
+
+  /* Dark surfaces */
+  --color-bg: #0E1015;
+  --color-surface: #161A21;
+  --color-surface-2: #1E242D;
+  --color-border-dark: #2A313C;
+  --color-text-primary: #E8E9EC;
+  --color-text-muted: #9AA1AC;
+
+  /* Primary — Teal */
+  --color-teal-50: #ECFDF8;
+  --color-teal-100: #CFFAEE;
+  --color-teal-200: #9FF3DE;
+  --color-teal-300: #5FE6C9;
+  --color-teal-400: #21CFB0;
+  --color-teal-500: #0FB5A1;
+  --color-teal-600: #0A9183;
+  --color-teal-700: #0C7268;
+  --color-teal-800: #0F5B54;
+  --color-teal-900: #114B47;
+
+  /* Accent — Gold */
+  --color-gold-400: #F8CB5C;
+  --color-gold-500: #F4B740;
+  --color-gold-600: #E09B1F;
+
+  /* Semantic */
+  --color-success: #2BBE6A;
+  --color-warning: #F59E0B;
+  --color-danger: #F0584B;
+  --color-info: #0FB5A1;
+
+  /* Fonts */
+  --font-sans: 'Geist', 'Inter', system-ui, sans-serif;
+  --font-mono: 'Geist Mono', 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Border Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  /* Animations */
+  --animate-fade-in: fade-in 0.3s ease-out;
+  --animate-slide-up: slide-up 0.4s ease-out;
+  --animate-pulse-soft: pulse-soft 2s ease-in-out infinite;
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pulse-soft {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+}
+
+/* ─── Base Styles ─── */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Light mode */
+.light body {
+  background-color: var(--color-stone-50);
+  color: var(--color-stone-700);
+}
+
+/* ─── Tabular Nums for all results ─── */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+}
+
+/* ─── Focus Ring ─── */
+:focus-visible {
+  outline: 2px solid var(--color-teal-500);
+  outline-offset: 2px;
+}
+
+/* ─── Selection ─── */
+::selection {
+  background-color: var(--color-teal-500);
+  color: white;
+}
+
+/* ─── Scrollbar (dark theme) ─── */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-dark);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
+
+/* ─── Reduced motion ─── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,223 @@
+---
+import Layout from '../layouts/Layout.astro';
+import CalculatorIsland from '../components/islands/CalculatorIsland';
+import { buildWebApplicationLD, buildBreadcrumbLD } from '../lib/seo';
+
+const title = 'Aspect Ratio Calculator — Free Tool for Developers & Designers';
+const description = 'The fastest, cleanest aspect ratio calculator on the web. Instantly compute ratios, find nearest matches, analyze images, and crop to any dimension. 100% client-side, no uploads.';
+
+const jsonLD = [
+  buildWebApplicationLD(
+    'Aspect Ratio Calculator',
+    description,
+    'https://aspectratio.dev'
+  ),
+  buildBreadcrumbLD([
+    { name: 'Home', url: 'https://aspectratio.dev' },
+  ]),
+];
+
+const tools = [
+  {
+    title: 'Universal Calculator',
+    description: 'Compute ratios, convert dimensions, find nearest standard matches instantly.',
+    href: '/calculator',
+    icon: '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8" y2="10.01"/><line x1="12" y1="10" x2="12" y2="10.01"/><line x1="16" y1="10" x2="16" y2="10.01"/><line x1="8" y1="14" x2="8" y2="14.01"/><line x1="12" y1="14" x2="12" y2="14.01"/><line x1="16" y1="14" x2="16" y2="14.01"/><line x1="8" y1="18" x2="16" y2="18"/></svg>',
+  },
+  {
+    title: 'Image Analyzer',
+    description: 'Drop an image to instantly reveal its dimensions, ratio, and platform compatibility.',
+    href: '/image',
+    icon: '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>',
+    hero: true,
+  },
+  {
+    title: 'Crop & Resize',
+    description: 'Crop, pad, or letterbox images to any ratio. Live preview, instant export.',
+    href: '/crop',
+    icon: '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M6.13 1L6 16a2 2 0 002 2h15"/><path d="M1 6.13L16 6a2 2 0 012 2v15"/></svg>',
+    hero: true,
+  },
+];
+
+const ratioCards = [
+  { ratio: '16:9', label: 'Widescreen HD', desc: 'YouTube, TV, monitors', w: 1920, h: 1080 },
+  { ratio: '4:3', label: 'Classic', desc: 'Presentations, old TV', w: 1024, h: 768 },
+  { ratio: '1:1', label: 'Square', desc: 'Instagram, profile pics', w: 1080, h: 1080 },
+  { ratio: '9:16', label: 'Vertical', desc: 'Reels, Shorts, TikTok', w: 1080, h: 1920 },
+  { ratio: '21:9', label: 'Ultrawide', desc: 'Cinema, ultrawide monitors', w: 2560, h: 1080 },
+  { ratio: '3:2', label: 'Photography', desc: 'DSLR, 35mm film', w: 1500, h: 1000 },
+];
+---
+
+<Layout title={title} description={description} jsonLD={jsonLD}>
+  <!-- Hero Section -->
+  <section class="relative overflow-hidden">
+    <!-- Background gradient -->
+    <div class="absolute inset-0 bg-gradient-to-b from-teal-500/5 via-transparent to-transparent pointer-events-none" />
+    <div class="absolute top-20 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-teal-500/3 rounded-full blur-3xl pointer-events-none" />
+
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-12 sm:pt-24 sm:pb-16">
+      <div class="text-center max-w-3xl mx-auto">
+        <!-- Badge -->
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/10 border border-teal-500/20 text-teal-400 text-xs font-medium mb-6">
+          <span class="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse-soft" />
+          Free • Open • 100% Client-Side
+        </div>
+
+        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold text-text-primary tracking-tight leading-[1.1] mb-6">
+          The aspect ratio tool
+          <br />
+          <span class="bg-gradient-to-r from-teal-400 to-teal-500 bg-clip-text text-transparent">developers reach for first</span>
+        </h1>
+
+        <p class="text-lg sm:text-xl text-text-muted max-w-2xl mx-auto mb-10 leading-relaxed">
+          Instantly compute ratios, analyze images, crop to any dimension. Fast, beautiful, and private — your images never leave your browser.
+        </p>
+
+        <!-- CTA buttons -->
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-3 mb-16">
+          <a
+            href="/calculator"
+            class="px-6 py-3 bg-teal-500 hover:bg-teal-600 text-white font-medium rounded-lg transition-all duration-150 hover:shadow-lg hover:shadow-teal-500/25 flex items-center gap-2"
+            id="cta-calculator"
+          >
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/>
+            </svg>
+            Open Calculator
+          </a>
+          <a
+            href="/image"
+            class="px-6 py-3 bg-surface hover:bg-surface-2 text-text-primary font-medium rounded-lg border border-border-dark/50 hover:border-teal-500/30 transition-all duration-150 flex items-center gap-2"
+            id="cta-image"
+          >
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>
+            </svg>
+            Analyze an Image
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Inline Calculator -->
+  <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+    <CalculatorIsland client:load />
+  </section>
+
+  <!-- Common Ratios -->
+  <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+    <h2 class="text-xl font-semibold text-text-primary mb-6">Common Aspect Ratios</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      {ratioCards.map((card) => (
+        <a
+          href={`/calculator?w=${card.w}&h=${card.h}`}
+          class="group p-4 bg-surface rounded-xl border border-border-dark/50 hover:border-teal-500/30 hover:bg-surface-2/30 transition-all duration-200 text-center"
+        >
+          <div class="font-mono text-lg font-bold text-teal-400 group-hover:text-teal-300 mb-1 tabular-nums">
+            {card.ratio}
+          </div>
+          <div class="text-xs font-medium text-text-primary mb-0.5">{card.label}</div>
+          <div class="text-[10px] text-text-muted">{card.desc}</div>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <!-- Tools Grid -->
+  <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+    <h2 class="text-xl font-semibold text-text-primary mb-6">Tools</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {tools.map((tool) => (
+        <a
+          href={tool.href}
+          class="group relative p-6 bg-surface rounded-xl border border-border-dark/50 hover:border-teal-500/30 hover:bg-surface-2/20 transition-all duration-200"
+        >
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-10 h-10 rounded-lg bg-teal-500/10 flex items-center justify-center text-teal-500 group-hover:bg-teal-500/15 transition-colors">
+              <Fragment set:html={tool.icon} />
+            </div>
+            <h3 class="font-medium text-text-primary group-hover:text-teal-400 transition-colors">{tool.title}</h3>
+          </div>
+          <p class="text-sm text-text-muted leading-relaxed">{tool.description}</p>
+          <div class="mt-4 text-xs text-teal-400 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+            Open tool →
+          </div>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <!-- Trust strip -->
+  <section class="border-t border-border-dark/30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-8 text-center">
+        <div>
+          <div class="w-10 h-10 rounded-lg bg-teal-500/10 flex items-center justify-center mx-auto mb-3">
+            <svg class="w-5 h-5 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <h3 class="text-sm font-semibold text-text-primary mb-1">Instant Results</h3>
+          <p class="text-xs text-text-muted">Real-time calculation on every keystroke. No page loads, no waiting.</p>
+        </div>
+        <div>
+          <div class="w-10 h-10 rounded-lg bg-teal-500/10 flex items-center justify-center mx-auto mb-3">
+            <svg class="w-5 h-5 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+          </div>
+          <h3 class="text-sm font-semibold text-text-primary mb-1">100% Private</h3>
+          <p class="text-xs text-text-muted">All processing happens in your browser. Images never leave your device.</p>
+        </div>
+        <div>
+          <div class="w-10 h-10 rounded-lg bg-teal-500/10 flex items-center justify-center mx-auto mb-3">
+            <svg class="w-5 h-5 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+            </svg>
+          </div>
+          <h3 class="text-sm font-semibold text-text-primary mb-1">Developer-First</h3>
+          <p class="text-xs text-text-muted">Built for devs and designers. Copy CSS, Tailwind, or raw values with one click.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SEO Content -->
+  <section class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <h2 class="text-xl font-semibold text-text-primary mb-4">What is an Aspect Ratio?</h2>
+    <div class="prose prose-sm text-text-muted space-y-4">
+      <p>
+        An <strong class="text-text-primary">aspect ratio</strong> is the proportional relationship between an image's width and height, expressed as two numbers separated by a colon (e.g., <code class="text-teal-400 bg-surface px-1.5 py-0.5 rounded text-xs font-mono">16:9</code>). It defines the shape of a frame — whether it's wide, tall, or square — independent of its actual pixel dimensions.
+      </p>
+      <p>
+        Aspect ratios are critical across screen design, photography, video production, print, and social media. Getting the ratio wrong means your content gets cropped unexpectedly, distorted, or surrounded by unwanted letterboxing bars.
+      </p>
+
+      <h3 class="text-lg font-medium text-text-primary mt-6 mb-3">Common Aspect Ratios</h3>
+      <ul class="space-y-2">
+        <li><strong class="text-text-primary font-mono text-xs">16:9</strong> — The widescreen standard. Used by YouTube, HDTV (1080p, 4K), most monitors, and presentation slides.</li>
+        <li><strong class="text-text-primary font-mono text-xs">4:3</strong> — The classic format. Standard definition TV, iPad screens, and many presentations.</li>
+        <li><strong class="text-text-primary font-mono text-xs">1:1</strong> — Square. Instagram posts, profile pictures, app icons.</li>
+        <li><strong class="text-text-primary font-mono text-xs">9:16</strong> — Vertical video. Instagram Reels, TikTok, YouTube Shorts, Stories.</li>
+        <li><strong class="text-text-primary font-mono text-xs">21:9</strong> — Ultrawide. Cinema-format films, ultrawide monitors.</li>
+        <li><strong class="text-text-primary font-mono text-xs">3:2</strong> — Photography standard. 35mm film, most DSLR and mirrorless cameras.</li>
+      </ul>
+
+      <h3 class="text-lg font-medium text-text-primary mt-6 mb-3">How Aspect Ratio is Calculated</h3>
+      <p>
+        To find the aspect ratio of any image, divide both the width and height by their <strong class="text-text-primary">greatest common divisor (GCD)</strong>. For example, <code class="text-teal-400 bg-surface px-1.5 py-0.5 rounded text-xs font-mono">1920 × 1080</code>: the GCD is 120, giving <code class="text-teal-400 bg-surface px-1.5 py-0.5 rounded text-xs font-mono">16:9</code>.
+      </p>
+      <p>
+        Our calculator does this instantly — including finding the nearest standard ratio when your dimensions don't simplify to a well-known proportion.
+      </p>
+    </div>
+  </section>
+
+  <!-- Last Updated -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+    <p class="text-xs text-text-muted/40">Last updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+  </div>
+</Layout>

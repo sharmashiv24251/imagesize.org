@@ -1,0 +1,31 @@
+---
+interface Tool {
+  title: string;
+  description: string;
+  href: string;
+  icon: string;
+}
+
+interface Props {
+  tools: Tool[];
+}
+
+const { tools } = Astro.props;
+---
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="related-tools">
+  {tools.map((tool) => (
+    <a
+      href={tool.href}
+      class="group p-4 bg-surface rounded-xl border border-border-dark/50 hover:border-teal-500/30 hover:bg-surface-2/30 transition-all duration-200"
+    >
+      <div class="flex items-center gap-3 mb-2">
+        <div class="w-8 h-8 rounded-md bg-teal-500/10 flex items-center justify-center text-teal-500 group-hover:bg-teal-500/15 transition-colors">
+          <Fragment set:html={tool.icon} />
+        </div>
+        <h3 class="text-sm font-medium text-text-primary group-hover:text-teal-400 transition-colors">{tool.title}</h3>
+      </div>
+      <p class="text-xs text-text-muted leading-relaxed">{tool.description}</p>
+    </a>
+  ))}
+</div>
