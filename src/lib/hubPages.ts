@@ -6,7 +6,10 @@
 
 export interface HubFormat {
   name: string;
-  slug: string;  // href: /[slug]
+  /** Generated page slug — used as href unless `href` is set */
+  slug: string;
+  /** Override href — use when no dedicated page exists (e.g. Shopify → crop-and-resize) */
+  href?: string;
   w: number;
   h: number;
   ratio: string;
@@ -37,7 +40,7 @@ export const hubPages: HubPage[] = [
       { name: 'Square Post', slug: 'instagram-square-post-size', w: 1080, h: 1080, ratio: '1:1', description: 'The default feed post format — equal width and height.' },
       { name: 'Portrait Post', slug: 'instagram-portrait-post-size', w: 1080, h: 1350, ratio: '4:5', description: 'Taller than wide — takes up more feed space and drives higher engagement.' },
       { name: 'Landscape Post', slug: 'instagram-landscape-post-size', w: 1080, h: 566, ratio: '1.91:1', description: 'Wider than tall — best for cinematic or panoramic photos.' },
-      { name: 'Story / Reel', slug: 'instagram-story-slash-reel-size', w: 1080, h: 1920, ratio: '9:16', description: 'Full-screen vertical format for Stories, Reels, and IGTV.' },
+      { name: 'Story / Reel', slug: 'instagram-story-reel-size', w: 1080, h: 1920, ratio: '9:16', description: 'Full-screen vertical format for Stories, Reels, and IGTV.' },
       { name: 'Profile Photo', slug: 'instagram-profile-photo-size', w: 320, h: 320, ratio: '1:1', description: 'Displayed as a circle — keep key content centred.' },
       { name: 'Carousel Slide', slug: 'instagram-carousel-slide-size', w: 1080, h: 1080, ratio: '1:1', description: 'Square is the most versatile carousel slide shape.' },
       { name: 'IGTV Cover', slug: 'instagram-igtv-cover-size', w: 420, h: 654, ratio: '2:3', description: 'The portrait thumbnail shown in IGTV browse.' },
@@ -155,12 +158,12 @@ export const hubPages: HubPage[] = [
     description: 'Complete Shopify image size guide for 2025: product image (2048×2048), collection image (1024×1024), slideshow / hero banner (1920×1080), logo (400×200), favicon (32×32), and background (1920×1080).',
     intro: 'Shopify serves images at different sizes depending on the theme and device. Starting with large, correctly-proportioned source images lets Shopify generate all its responsive sizes without quality loss.',
     formats: [
-      { name: 'Product Image', slug: 'shopify-product-image-size', w: 2048, h: 2048, ratio: '1:1', description: 'Square product photos — Shopify recommends at least 2048×2048 px.' },
-      { name: 'Collection Image', slug: 'shopify-collection-image-size', w: 1024, h: 1024, ratio: '1:1', description: 'Square thumbnail representing a product collection.' },
-      { name: 'Slideshow / Hero Banner', slug: 'shopify-slideshow-hero-banner-size', w: 1920, h: 1080, ratio: '16:9', description: 'Wide homepage slideshow or hero banner image.' },
-      { name: 'Logo', slug: 'shopify-logo-size', w: 400, h: 200, ratio: '2:1', description: 'Horizontal logo shown in the site header.' },
-      { name: 'Favicon', slug: 'shopify-favicon-size', w: 32, h: 32, ratio: '1:1', description: 'Tiny square icon shown in browser tabs.' },
-      { name: 'Background', slug: 'shopify-background-size', w: 1920, h: 1080, ratio: '16:9', description: 'Full-width background image used in some themes.' },
+      { name: 'Product Image', slug: 'shopify-product-image-size', href: '/crop-and-resize?tw=2048&th=2048', w: 2048, h: 2048, ratio: '1:1', description: 'Square product photos — Shopify recommends at least 2048×2048 px.' },
+      { name: 'Collection Image', slug: 'shopify-collection-image-size', href: '/crop-and-resize?tw=1024&th=1024', w: 1024, h: 1024, ratio: '1:1', description: 'Square thumbnail representing a product collection.' },
+      { name: 'Slideshow / Hero Banner', slug: 'shopify-slideshow-hero-banner-size', href: '/crop-and-resize?tw=1920&th=1080', w: 1920, h: 1080, ratio: '16:9', description: 'Wide homepage slideshow or hero banner image.' },
+      { name: 'Logo', slug: 'shopify-logo-size', href: '/crop-and-resize?tw=400&th=200', w: 400, h: 200, ratio: '2:1', description: 'Horizontal logo shown in the site header.' },
+      { name: 'Favicon', slug: 'shopify-favicon-size', href: '/crop-and-resize?tw=32&th=32', w: 32, h: 32, ratio: '1:1', description: 'Tiny square icon shown in browser tabs.' },
+      { name: 'Background', slug: 'shopify-background-size', href: '/crop-and-resize?tw=1920&th=1080', w: 1920, h: 1080, ratio: '16:9', description: 'Full-width background image used in some themes.' },
     ],
   },
 ];
