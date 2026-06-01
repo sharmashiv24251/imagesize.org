@@ -28,7 +28,18 @@ export function getStaticPaths() {
 
 const { page } = Astro.props;
 const { exam } = page;
-const canonicalUrl = absoluteUrl(`/${page.slug}`);
+const canonicalUrl = absoluteUrl(`/${page.slug}/`);
+
+const keywords = [
+  `${exam.name} photo size`,
+  `${exam.name} photo size in KB`,
+  `${exam.name} photo size pixels`,
+  `${exam.name} photo ${exam.photoW}x${exam.photoH}`,
+  `${exam.name} photo max ${exam.photoMaxKb} KB`,
+  `${exam.body} photo size`,
+  `${exam.name} signature size`,
+  `${exam.name} photo format`,
+].join(', ');
 
 const formatLabel = exam.format === 'jpeg' ? 'JPG / JPEG' : exam.format === 'png' ? 'PNG' : 'JPG or PNG';
 
@@ -81,7 +92,7 @@ const jsonLD = [
 ];
 ---
 
-<Layout title={page.title} description={page.description} canonicalUrl={canonicalUrl} jsonLD={jsonLD} tier={2}>
+<Layout title={page.title} description={page.description} keywords={keywords} canonicalUrl={canonicalUrl} jsonLD={jsonLD} tier={2}>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
     <Breadcrumb items={[

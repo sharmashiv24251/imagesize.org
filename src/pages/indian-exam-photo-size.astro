@@ -8,7 +8,7 @@ import ExamSearchIsland from '../components/islands/ExamSearchIsland';
 
 const title = 'Indian Exam Photo Size Guide — Crop, Resize & Compress for NEET, UPSC, SSC & More';
 const description = 'Exact photo and signature size requirements for NEET, UPSC, SSC, JEE, IBPS, RRB, GATE, CAT, CUET, and PAN Card. Crop and compress your image to the required KB and pixels — free, private, no upload.';
-const canonicalUrl = absoluteUrl('/indian-exam-photo-size');
+const canonicalUrl = absoluteUrl('/indian-exam-photo-size/');
 
 const faqs = [
   {
@@ -41,9 +41,10 @@ const jsonLD = [
     { name: 'Indian Govt Exam Photo Size Guide', url: canonicalUrl },
   ]),
 ];
+const keywords = 'indian exam photo size, NEET photo size, UPSC photo size, SSC photo size, JEE photo size, IBPS photo size, RRB photo size, GATE photo size, CAT photo size, CUET photo size, PAN card photo size, government exam photo size KB, exam photo compress, exam photo resize, passport photo size India';
 ---
 
-<Layout title={title} description={description} canonicalUrl={canonicalUrl} jsonLD={jsonLD} tier={1}>
+<Layout title={title} description={description} keywords={keywords} canonicalUrl={canonicalUrl} jsonLD={jsonLD} tier={1}>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
     <Breadcrumb items={[
