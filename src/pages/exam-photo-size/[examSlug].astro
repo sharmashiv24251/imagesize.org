@@ -1,0 +1,285 @@
+---
+/**
+ * Programmatic exam photo tool page.
+ * URL: /exam-photo-size/[examSlug]
+ * e.g. /exam-photo-size/neet-ug
+ *
+ * Embeds:
+ *  - ResizeIsland   → crop/resize to exact pixel dimensions
+ *  - ImageCompressorIsland → compress photo to KB limit
+ *
+ * To add an exam: push a new entry to src/lib/examPages.ts
+ * This file never needs to change.
+ */
+import Layout from '../../layouts/Layout.astro';
+import Breadcrumb from '../../components/ui/Breadcrumb.astro';
+import FAQ from '../../components/ui/FAQ.astro';
+import ResizeIsland from '../../components/islands/ResizeIsland';
+import { buildBreadcrumbLD, buildFAQLD, buildHowToLD, buildWebApplicationLD } from '../../lib/seo';
+import { absoluteUrl, site } from '../../lib/site';
+import { examPages, examSlugFragment } from '../../lib/examPages';
+
+export function getStaticPaths() {
+  return examPages.map((page) => ({
+    params: { examSlug: examSlugFragment(page) },
+    props: { page },
+  }));
+}
+
+const { page } = Astro.props;
+const { exam } = page;
+const canonicalUrl = absoluteUrl(`/${page.slug}`);
+
+const formatLabel = exam.format === 'jpeg' ? 'JPG / JPEG' : exam.format === 'png' ? 'PNG' : 'JPG or PNG';
+
+const faqs = [
+  {
+    question: `What is the photo size for ${exam.name}?`,
+    answer: `The ${exam.name} (${exam.body}) portal requires a photo of <strong>${exam.photoW}×${exam.photoH} pixels</strong> in ${formatLabel} format, with a maximum file size of <strong>${exam.photoMaxKb} KB</strong>${exam.photoMinKb ? ` and a minimum of ${exam.photoMinKb} KB` : ''}. ${exam.background}.`,
+  },
+  {
+    question: `What is the signature size for ${exam.name}?`,
+    answer: `The ${exam.name} signature upload requires an image of <strong>${exam.signW}×${exam.signH} pixels</strong> in ${formatLabel} format, with a ${exam.signMinKb ? `file size between <strong>${exam.signMinKb} KB and ${exam.signMaxKb} KB</strong>` : `maximum file size of <strong>${exam.signMaxKb} KB</strong>`}. Sign on plain white paper with black or blue ink, scan or photograph it, then compress using the tool below.`,
+  },
+  {
+    question: `My photo is a selfie in 16:9 landscape — how do I fix it for ${exam.name}?`,
+    answer: `Open the <strong>Crop &amp; Resize</strong> tool above. It is pre-loaded with the exact ${exam.photoW}×${exam.photoH} px target. Select "Crop" mode, which trims the wide sides and keeps only the centre portion. Export as JPG, then use the Compress tool to bring it under ${exam.photoMaxKb} KB.`,
+  },
+  {
+    question: `How do I compress a photo under ${exam.photoMaxKb} KB for ${exam.name}?`,
+    answer: `Use the <strong>Compress Photo</strong> section on this page. Set the target KB to ${exam.photoMaxKb}${exam.photoMinKb ? ` (keep it above ${exam.photoMinKb} KB)` : ''}, choose JPG format, then click Compress. The tool binary-searches quality settings to get as close to your target as possible — all in your browser, nothing uploaded.`,
+  },
+  {
+    question: `Does ${exam.name} accept WebP or PNG photos?`,
+    answer: `No — ${exam.body} portals generally require ${formatLabel}. WebP is not accepted by most government exam portals. Always save your final upload as JPEG (.jpg) unless the current official notification specifies otherwise.`,
+  },
+  ...exam.notes.map((note, i) => ({
+    question: i === 0 ? `Any special rules I should know about ${exam.name} photos?` : `What else should I know about the ${exam.name} photo upload?`,
+    answer: note,
+  })).slice(0, 2),
+];
+
+const jsonLD = [
+  buildWebApplicationLD(page.title, page.description, canonicalUrl),
+  buildFAQLD(faqs),
+  buildBreadcrumbLD([
+    { name: 'Home', url: site.url },
+    { name: 'Indian Exam Photo Size', url: absoluteUrl('/indian-exam-photo-size') },
+    { name: page.h1, url: canonicalUrl },
+  ]),
+  buildHowToLD(
+    `How to prepare a photo for ${exam.name}`,
+    `Crop, resize, and compress a photo to meet the ${exam.name} portal requirements.`,
+    [
+      { name: 'Open the Crop tool', text: `The tool is pre-loaded with ${exam.photoW}×${exam.photoH} px — the exact ${exam.name} photo size.` },
+      { name: 'Upload and crop your photo', text: 'Drop your image, choose Crop mode to fill the frame, then export as JPG.' },
+      { name: 'Compress to KB limit', text: `Use the Compress section below. Set the target to ${exam.photoMaxKb} KB and click Compress.` },
+      { name: 'Upload to the portal', text: 'Download the result and upload it to the official exam portal.' },
+    ],
+    canonicalUrl
+  ),
+];
+---
+
+<Layout title={page.title} description={page.description} canonicalUrl={canonicalUrl} jsonLD={jsonLD} tier={2}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <Breadcrumb items={[
+      { name: 'Home', url: '/' },
+      { name: 'Indian Exam Photo Size', url: '/indian-exam-photo-size' },
+      { name: exam.name, url: `/${page.slug}` },
+    ]} />
+
+    <!-- Header -->
+    <div class="mb-8 max-w-3xl">
+      <div class="flex flex-wrap items-center gap-2 mb-3">
+        <span class="text-[11px] px-2 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
+          🇮🇳 {exam.body}
+        </span>
+        <span class="text-[11px] px-2 py-1 rounded-full bg-surface border border-border-dark text-text-muted">
+          {exam.category}
+        </span>
+        <span class="text-[11px] px-2 py-1 rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/20">
+          No Upload · 100% Private
+        </span>
+      </div>
+      <h1 class="text-3xl sm:text-4xl font-bold text-text-primary tracking-tight mb-3 leading-tight">
+        {page.h1}
+      </h1>
+      <p class="text-text-muted leading-relaxed" set:html={page.intro} />
+
+      <!-- Warning banner -->
+      <div class="mt-4 flex items-start gap-3 bg-amber-500/5 border border-amber-500/20 rounded-xl px-4 py-3">
+        <svg class="w-4 h-4 text-amber-400 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+        </svg>
+        <p class="text-xs text-amber-400/90 leading-relaxed">
+          Requirements change each exam cycle.
+          {exam.sourceUrl && (
+            <>Always verify from the official <a href={exam.sourceUrl} class="underline hover:text-amber-300" target="_blank" rel="noopener">{exam.sourceLabel || exam.sourceUrl}</a> notification before submitting.</>
+          )}
+          {!exam.sourceUrl && <>Always verify from the official exam notification before submitting.</>}
+        </p>
+      </div>
+    </div>
+
+    <!-- Quick-spec bar -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-10">
+      {[
+        { label: 'Photo Size', value: `${exam.photoW}×${exam.photoH} px` },
+        { label: 'Photo Max', value: exam.photoMinKb ? `${exam.photoMinKb}–${exam.photoMaxKb} KB` : `≤ ${exam.photoMaxKb} KB` },
+        { label: 'Signature Size', value: `${exam.signW}×${exam.signH} px` },
+        { label: 'Sign KB', value: exam.signMinKb ? `${exam.signMinKb}–${exam.signMaxKb} KB` : `≤ ${exam.signMaxKb} KB` },
+      ].map((spec) => (
+        <div class="bg-surface rounded-xl border border-border-dark/50 px-4 py-3 text-center">
+          <div class="text-[10px] text-text-muted uppercase tracking-wider mb-1">{spec.label}</div>
+          <div class="font-mono text-sm text-text-primary font-semibold">{spec.value}</div>
+        </div>
+      ))}
+    </div>
+
+    <!-- Background requirement -->
+    <div class="max-w-3xl mb-10">
+      <div class="flex items-center gap-2 px-4 py-2.5 bg-surface rounded-lg border border-border-dark/50 text-sm text-text-muted">
+        <svg class="w-4 h-4 text-teal-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
+        </svg>
+        <span><strong class="text-text-primary">Background:</strong> {exam.background}</span>
+      </div>
+    </div>
+
+    <!-- ── STEP 1: Crop, Resize & Compress Photo ───────────────────────── -->
+    <section class="mb-12" id="crop-photo">
+      <div class="flex items-center gap-3 mb-4">
+        <span class="w-7 h-7 rounded-full bg-teal-500/15 border border-teal-500/30 text-teal-400 text-xs font-bold flex items-center justify-center shrink-0">1</span>
+        <div>
+          <h2 class="text-lg font-semibold text-text-primary">Crop, Resize &amp; Compress Photo</h2>
+          <p class="text-xs text-text-muted mt-0.5">
+            Target: <span class="font-mono text-teal-400">{exam.photoW}×{exam.photoH} px</span> ·
+            <span class="font-mono text-teal-400"> ≤ {exam.photoMaxKb} KB</span> · JPEG
+          </p>
+        </div>
+      </div>
+
+      <div class="bg-surface rounded-xl border border-border-dark/50 overflow-hidden">
+        <div class="p-4 border-b border-border-dark/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <p class="text-sm font-medium text-text-primary">Photo — {exam.photoW}×{exam.photoH} px</p>
+            <p class="text-xs text-text-muted mt-0.5">
+              Drop your photo, choose <strong>Crop</strong> (trims sides of a landscape selfie) or <strong>Fit</strong> (keeps full face with padding).
+              The export bar is pre-set to <strong>JPG · {exam.photoMaxKb} KB limit</strong> — click Export to crop <em>and</em> compress in one step.
+            </p>
+          </div>
+          <a
+            href={`/crop-and-resize?tw=${exam.photoW}&th=${exam.photoH}`}
+            class="text-xs text-teal-400 hover:text-teal-300 whitespace-nowrap shrink-0"
+          >
+            Open full tool →
+          </a>
+        </div>
+        <div class="p-4">
+          <ResizeIsland
+            client:visible
+            initialWidth={exam.photoW}
+            initialHeight={exam.photoH}
+            lockedMode="exact"
+            targetKb={exam.photoMaxKb}
+          />
+        </div>
+      </div>
+    </section>
+
+    <!-- ── STEP 2: Crop & Compress Signature ───────────────────────────── -->
+    <section class="mb-12" id="crop-signature">
+      <div class="flex items-center gap-3 mb-4">
+        <span class="w-7 h-7 rounded-full bg-teal-500/15 border border-teal-500/30 text-teal-400 text-xs font-bold flex items-center justify-center shrink-0">2</span>
+        <div>
+          <h2 class="text-lg font-semibold text-text-primary">Crop &amp; Compress Signature</h2>
+          <p class="text-xs text-text-muted mt-0.5">
+            Target: <span class="font-mono text-teal-400">{exam.signW}×{exam.signH} px</span> ·
+            <span class="font-mono text-teal-400"> {exam.signMinKb ? `${exam.signMinKb}–${exam.signMaxKb}` : `≤ ${exam.signMaxKb}`} KB</span> · JPEG
+          </p>
+        </div>
+      </div>
+
+      <div class="bg-surface rounded-xl border border-border-dark/50 overflow-hidden">
+        <div class="p-4 border-b border-border-dark/40">
+          <p class="text-sm font-medium text-text-primary">Signature — {exam.signW}×{exam.signH} px</p>
+          <p class="text-xs text-text-muted mt-0.5">
+            Sign on plain white paper with black/blue ink. Photograph or scan it, then drop it here.
+            Trim whitespace using <strong>Crop</strong> mode. Export compresses to
+            {exam.signMinKb ? ` ${exam.signMinKb}–${exam.signMaxKb} KB` : ` ≤ ${exam.signMaxKb} KB`} automatically.
+            {exam.signMinKb && <span class="text-amber-400/80"> Keep it above {exam.signMinKb} KB — portals reject files that are too small.</span>}
+          </p>
+        </div>
+        <div class="p-4">
+          <ResizeIsland
+            client:visible
+            initialWidth={exam.signW}
+            initialHeight={exam.signH}
+            lockedMode="exact"
+            targetKb={exam.signMaxKb}
+          />
+        </div>
+      </div>
+    </section>
+
+    <!-- Notes callout -->
+    {exam.notes.length > 0 && (
+      <section class="max-w-3xl mb-12">
+        <h2 class="text-lg font-semibold text-text-primary mb-3">Official Requirements Summary</h2>
+        <div class="bg-surface rounded-xl border border-border-dark/50 p-5">
+          <ul class="space-y-2.5">
+            {exam.notes.map((note) => (
+              <li class="flex items-start gap-2.5 text-sm text-text-muted">
+                <svg class="w-4 h-4 mt-0.5 shrink-0 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                  <path d="M5 13l4 4L19 7"/>
+                </svg>
+                {note}
+              </li>
+            ))}
+          </ul>
+          {exam.sourceUrl && (
+            <p class="mt-4 text-xs text-text-muted/60">
+              Source: <a href={exam.sourceUrl} target="_blank" rel="noopener" class="text-teal-400 hover:text-teal-300">{exam.sourceLabel || exam.sourceUrl}</a>
+            </p>
+          )}
+        </div>
+      </section>
+    )}
+
+    <!-- FAQ -->
+    <div class="max-w-3xl mb-12">
+      <h2 class="text-xl font-semibold text-text-primary mb-4">Frequently Asked Questions</h2>
+      <FAQ items={faqs} />
+    </div>
+
+    <!-- Back link + other exams -->
+    <div class="max-w-3xl mb-8">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-sm font-medium text-text-muted uppercase tracking-wider">Other Exam Photo Guides</h2>
+        <a href="/indian-exam-photo-size" class="text-xs text-teal-400 hover:text-teal-300">View all →</a>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        {examPages
+          .filter((p) => p.slug !== page.slug)
+          .map((p) => (
+            <a
+              href={`/${p.slug}`}
+              class="text-[11px] px-3 py-1.5 rounded-full bg-surface border border-border-dark text-text-muted hover:text-teal-300 hover:border-teal-500/30 transition-colors"
+            >
+              {p.exam.name}
+            </a>
+          ))}
+      </div>
+    </div>
+
+    <div class="max-w-3xl">
+      <p class="text-xs text-text-muted/40">
+        Last updated: {new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}
+        · Data sourced from official {exam.body} portals. Requirements may change — verify before submitting.
+      </p>
+    </div>
+
+  </div>
+</Layout>

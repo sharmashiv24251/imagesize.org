@@ -51,6 +51,10 @@ interface ResizeIslandProps {
   initialFormat?: string;
   initialWidth?: number;
   initialHeight?: number;
+  /** Lock the tool to a single mode and hide the mode selector */
+  lockedMode?: TargetMode;
+  /** When set, show a KB target input and compress the export to this limit */
+  targetKb?: number;
 }
 
 const platformPresets = platformFormats.map((format) => ({
@@ -105,6 +109,8 @@ export default function ResizeIsland({
   initialFormat,
   initialWidth = 1920,
   initialHeight = 1080,
+  lockedMode,
+  targetKb: initialTargetKb,
 }: ResizeIslandProps = {}) {
   const initialPlatformIndex = Math.max(0, platformPresets.findIndex((preset) =>
     preset.platform === initialPlatform &&
@@ -118,7 +124,9 @@ export default function ResizeIsland({
   const [imgHeight, setImgHeight] = useState(0);
   const [fileName, setFileName] = useState('');
 
-  const [targetMode, setTargetMode] = useState<TargetMode>(initialPlatform ? 'platform' : 'ratio');
+  // lockedMode overrides everything — defaults to 'exact' when dimensions are passed
+  const effectiveInitialMode: TargetMode = lockedMode ?? (initialPlatform ? 'platform' : 'ratio');
+  const [targetMode, setTargetMode] = useState<TargetMode>(effectiveInitialMode);
   const [fitMode, setFitMode] = useState<FitMode>('crop');
 
   const [ratioW, setRatioW] = useState(16);
@@ -132,8 +140,10 @@ export default function ResizeIsland({
 
   const [fitFill, setFitFill] = useState<'blur' | 'color'>('blur');
   const [fitColor, setFitColor] = useState('#000000');
-  const [exportFormat, setExportFormat] = useState<ExportFormat>('png');
+  const [exportFormat, setExportFormat] = useState<ExportFormat>(initialTargetKb ? 'jpeg' : 'png');
   const [quality, setQuality] = useState(0.92);
+  const [targetKbInput, setTargetKbInput] = useState(initialTargetKb ?? 0);
+  const [isCompressing, setIsCompressing] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -424,18 +434,44 @@ export default function ResizeIsland({
     return exportCanvas;
   }, [imgWidth, imgHeight, fitMode, fitFill, fitColor, drawBlurredBg]);
 
-  const handleExport = useCallback(() => {
+  const handleExport = useCallback(async () => {
     const target = getEffectiveTarget();
     const exportCanvas = createExportCanvas(target);
     if (!exportCanvas) return;
 
-    const link = document.createElement('a');
     const baseName = fileName ? fileName.replace(/\.[^.]+$/, '') : 'image';
     const mime = exportFormat === 'png' ? 'image/png' : `image/${exportFormat}`;
-    link.download = `${baseName}-${target.w}x${target.h}.${exportFormat === 'jpeg' ? 'jpg' : exportFormat}`;
+    const ext = exportFormat === 'jpeg' ? 'jpg' : exportFormat;
+
+    // If targetKb compression is requested, binary-search quality to hit the limit
+    if (targetKbInput > 0 && exportFormat !== 'png') {
+      setIsCompressing(true);
+      const targetBytes = targetKbInput * 1024;
+      let bestBlob: Blob | null = null;
+      let low = 0.08, high = 0.95;
+      for (let i = 0; i < 8; i++) {
+        const q = (low + high) / 2;
+        const blob = await new Promise<Blob | null>((res) => exportCanvas.toBlob(res, mime, q));
+        if (!blob) break;
+        if (blob.size <= targetBytes) { bestBlob = blob; low = q; }
+        else { high = q; if (!bestBlob || blob.size < bestBlob.size) bestBlob = blob; }
+      }
+      setIsCompressing(false);
+      if (bestBlob) {
+        const link = document.createElement('a');
+        link.download = `${baseName}-${target.w}x${target.h}.${ext}`;
+        link.href = URL.createObjectURL(bestBlob);
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(link.href), 5000);
+        return;
+      }
+    }
+
+    const link = document.createElement('a');
+    link.download = `${baseName}-${target.w}x${target.h}.${ext}`;
     link.href = exportCanvas.toDataURL(mime, exportFormat === 'png' ? undefined : quality);
     link.click();
-  }, [getEffectiveTarget, createExportCanvas, fileName, exportFormat, quality]);
+  }, [getEffectiveTarget, createExportCanvas, fileName, exportFormat, quality, targetKbInput]);
 
   const handleBatchExport = useCallback(async () => {
     if (targetMode !== 'platform' || selectedPlatforms.length === 0) return;
@@ -511,22 +547,24 @@ export default function ResizeIsland({
     <div class="w-full max-w-5xl mx-auto">
       {/* Controls */}
       <div class="flex flex-wrap items-start gap-3 mb-4">
-        {/* Target Mode */}
-        <div class="flex items-center gap-1 p-1 bg-surface rounded-lg border border-border-dark/50 shrink-0">
-          {(['ratio', 'exact', 'platform'] as TargetMode[]).map((m) => (
-            <button
-              key={m}
-              onClick={() => handleTargetModeChange(m)}
-              class={`px-3 py-1.5 text-sm rounded-md transition-all duration-150 ${
-                targetMode === m
-                  ? 'bg-teal-500/15 text-teal-400 font-medium'
-                  : 'text-text-muted hover:text-text-primary'
-              }`}
-            >
-              {m === 'exact' ? 'Exact' : m === 'ratio' ? 'Ratio' : 'Platform'}
-            </button>
-          ))}
-        </div>
+        {/* Target Mode — hidden when lockedMode is set */}
+        {!lockedMode && (
+          <div class="flex items-center gap-1 p-1 bg-surface rounded-lg border border-border-dark/50 shrink-0">
+            {(['ratio', 'exact', 'platform'] as TargetMode[]).map((m) => (
+              <button
+                key={m}
+                onClick={() => handleTargetModeChange(m)}
+                class={`px-3 py-1.5 text-sm rounded-md transition-all duration-150 ${
+                  targetMode === m
+                    ? 'bg-teal-500/15 text-teal-400 font-medium'
+                    : 'text-text-muted hover:text-text-primary'
+                }`}
+              >
+                {m === 'exact' ? 'Exact' : m === 'ratio' ? 'Ratio' : 'Platform'}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Fit Mode */}
         <div class="flex items-center gap-1 p-1 bg-surface rounded-lg border border-border-dark/50 shrink-0">
@@ -590,7 +628,7 @@ export default function ResizeIsland({
       </div>
 
       {imageSrc && (
-        <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-6 p-3 bg-surface rounded-xl border border-border-dark/50">
+        <div class="flex flex-col sm:flex-row sm:items-center flex-wrap gap-3 mb-6 p-3 bg-surface rounded-xl border border-border-dark/50">
           <select
             value={exportFormat}
             onChange={(e) => setExportFormat((e.target as HTMLSelectElement).value as ExportFormat)}
@@ -600,7 +638,7 @@ export default function ResizeIsland({
             <option value="jpeg">JPG</option>
             <option value="webp">WebP</option>
           </select>
-          {exportFormat !== 'png' && (
+          {exportFormat !== 'png' && !targetKbInput && (
             <label class="flex items-center gap-2 text-xs text-text-muted">
               Quality
               <input
@@ -615,7 +653,25 @@ export default function ResizeIsland({
               <span class="font-mono text-text-primary w-8">{Math.round(quality * 100)}</span>
             </label>
           )}
-          <span class="text-xs text-text-muted sm:ml-auto">Cmd/Ctrl+E exports the current result.</span>
+          {/* KB target input — always shown when initialTargetKb is set, optionally shown otherwise */}
+          {exportFormat !== 'png' && (
+            <label class="flex items-center gap-2 text-xs text-text-muted">
+              <span class="whitespace-nowrap">Max size</span>
+              <input
+                type="number"
+                min="0"
+                placeholder="KB limit"
+                value={targetKbInput || ''}
+                onInput={(e) => setTargetKbInput(Math.max(0, parseInt((e.target as HTMLInputElement).value, 10) || 0))}
+                class="w-20 px-2 py-1.5 bg-surface-2 border border-border-dark rounded-md text-text-primary font-mono text-sm text-center focus:border-teal-500 outline-none"
+              />
+              <span class="text-text-muted">KB</span>
+              {targetKbInput > 0 && (
+                <span class="text-[10px] text-teal-400 bg-teal-500/10 px-1.5 py-0.5 rounded">auto-compress</span>
+              )}
+            </label>
+          )}
+          <span class="text-xs text-text-muted sm:ml-auto">Cmd/Ctrl+E to export.</span>
         </div>
       )}
 
@@ -797,9 +853,10 @@ export default function ResizeIsland({
                 <div class="flex items-center gap-2">
                   <button
                     onClick={handleExport}
-                    class="text-xs px-3 py-1 bg-teal-500/15 text-teal-400 hover:bg-teal-500/25 rounded-md transition-colors"
+                    disabled={isCompressing}
+                    class="text-xs px-3 py-1 bg-teal-500/15 text-teal-400 hover:bg-teal-500/25 disabled:opacity-60 rounded-md transition-colors"
                   >
-                    Export {exportFormat.toUpperCase()}
+                    {isCompressing ? 'Compressing…' : (targetKbInput > 0 ? `Export & Compress to ${targetKbInput} KB` : `Export ${exportFormat.toUpperCase()}`)}
                   </button>
                   {targetMode === 'platform' && selectedPlatforms.length > 1 && (
                     <button
