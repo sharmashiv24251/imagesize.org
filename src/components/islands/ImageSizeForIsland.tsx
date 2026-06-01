@@ -78,6 +78,21 @@ export default function ImageSizeForIsland({ options }: ImageSizeForIslandProps)
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<CategoryFilter>('all');
 
+  // Keywords that suggest the user is looking for an Indian govt exam photo
+  const EXAM_KEYWORDS = [
+    'neet','upsc','ssc','jee','ibps','rrb','gate','cat','cuet','pan card',
+    'pan','nda','cds','sbi po','sbi','ugc net','ugc','neet pg','xat','bitsat',
+    'afcat','mht cet','mht','nift','viteee','nimcet','rbi','clat','jee advanced',
+    'jee main','rrb ntpc','ssc cgl','ssc chsl','government exam','govt exam',
+    'india exam','indian exam','exam photo','exam passport','form photo',
+  ];
+
+  const isExamQuery = useMemo(() => {
+    const q = normalizeSearchInput(query).toLowerCase();
+    if (!q) return false;
+    return EXAM_KEYWORDS.some((kw) => q.includes(kw) || kw.includes(q.split(' ')[0]));
+  }, [query]);
+
   const categoryLabels = useMemo(() => {
     const labels = new Map<CategoryFilter, string>([['all', 'All']]);
     for (const item of options) labels.set(item.category, item.categoryLabel);
@@ -212,6 +227,27 @@ export default function ImageSizeForIsland({ options }: ImageSizeForIslandProps)
             </div>
           )}
         </div>
+
+        {/* Exam nudge banner */}
+        {isExamQuery && (
+          <a
+            href="/indian-exam-photo-size"
+            class="flex items-center gap-3 px-5 py-3.5 bg-teal-500/8 border-t border-teal-500/20 hover:bg-teal-500/14 transition-colors group"
+          >
+            <span class="text-lg shrink-0">🇮🇳</span>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-medium text-teal-300 group-hover:text-teal-200">
+                Looking for an Indian exam photo size?
+              </p>
+              <p class="text-xs text-text-muted mt-0.5">
+                See exact pixel dimensions, KB limits and fix your photo for NEET, UPSC, SSC, JEE & 20+ more exams.
+              </p>
+            </div>
+            <svg class="w-4 h-4 text-teal-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+            </svg>
+          </a>
+        )}
       </div>
 
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-text-muted">

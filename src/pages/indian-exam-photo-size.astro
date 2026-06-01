@@ -3,7 +3,8 @@ import Layout from '../layouts/Layout.astro';
 import Breadcrumb from '../components/ui/Breadcrumb.astro';
 import { buildBreadcrumbLD, buildFAQLD, buildWebApplicationLD } from '../lib/seo';
 import { absoluteUrl, site } from '../lib/site';
-import { examPages, examRequirements, examSlugFragment } from '../lib/examPages';
+import { examPages, examSlugFragment } from '../lib/examPages';
+import ExamSearchIsland from '../components/islands/ExamSearchIsland';
 
 const title = 'Indian Exam Photo Size Guide — Crop, Resize & Compress for NEET, UPSC, SSC & More';
 const description = 'Exact photo and signature size requirements for NEET, UPSC, SSC, JEE, IBPS, RRB, GATE, CAT, CUET, and PAN Card. Crop and compress your image to the required KB and pixels — free, private, no upload.';
@@ -37,7 +38,7 @@ const jsonLD = [
   buildFAQLD(faqs),
   buildBreadcrumbLD([
     { name: 'Home', url: site.url },
-    { name: 'Indian Exam Photo Size', url: canonicalUrl },
+    { name: 'Indian Govt Exam Photo Size Guide', url: canonicalUrl },
   ]),
 ];
 ---
@@ -47,7 +48,7 @@ const jsonLD = [
 
     <Breadcrumb items={[
       { name: 'Home', url: '/' },
-      { name: 'Indian Exam Photo Size', url: '/indian-exam-photo-size' },
+      { name: 'Indian Govt Exam Photo Size Guide', url: '/indian-exam-photo-size' },
     ]} />
 
     <!-- Hero -->
@@ -79,7 +80,13 @@ const jsonLD = [
 
     <!-- Exam list -->
     <section class="mb-14" id="exam-list">
-      <h2 class="text-xl font-semibold text-text-primary mb-6">All Supported Exams</h2>
+      <h2 class="text-xl font-semibold text-text-primary mb-4">Find Your Exam</h2>
+
+      <!-- Search -->
+      <ExamSearchIsland
+        client:load
+        exams={examPages}
+      />
 
       <!-- Desktop: scrollable table -->
       <div class="exam-table overflow-x-auto rounded-xl border border-border-dark/50">
