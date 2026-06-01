@@ -102,6 +102,14 @@ const robotsMeta = noindex ? 'noindex,follow' : getRobotsMeta(tier);
           <a href="/image" class="px-3 py-2 text-sm text-text-muted hover:text-text-primary hover:bg-surface rounded-md transition-all duration-150" id="nav-image">Image Analyzer</a>
           <a href="/calculator" class="px-3 py-2 text-sm text-text-muted hover:text-text-primary hover:bg-surface rounded-md transition-all duration-150" id="nav-calculator">Calculator</a>
           <a href="/embed" class="px-3 py-2 text-sm text-text-muted hover:text-text-primary hover:bg-surface rounded-md transition-all duration-150" id="nav-embed">Embed</a>
+          <a
+            href="/indian-exam-photo-size"
+            id="nav-indian-exam"
+            class="nav-indian-exam-link ml-1 inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-150"
+          >
+            <span class="text-base leading-none" aria-hidden="true">🇮🇳</span>
+            <span>Indian Exams</span>
+          </a>
         </div>
         <div class="flex items-center gap-3">
           <!-- Mobile menu button -->
@@ -125,6 +133,13 @@ const robotsMeta = noindex ? 'noindex,follow' : getRobotsMeta(tier);
           <a href="/image" class="block px-3 py-2 text-sm text-text-muted hover:text-text-primary hover:bg-surface rounded-md transition-all">Image Analyzer</a>
           <a href="/calculator" class="block px-3 py-2 text-sm text-text-muted hover:text-text-primary hover:bg-surface rounded-md transition-all">Calculator</a>
           <a href="/embed" class="block px-3 py-2 text-sm text-text-muted hover:text-text-primary hover:bg-surface rounded-md transition-all">Embed Widget</a>
+          <a
+            href="/indian-exam-photo-size"
+            class="mobile-indian-exam-link flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-all"
+          >
+            <span class="text-base leading-none" aria-hidden="true">🇮🇳</span>
+            <span>Indian Exam Photo Size</span>
+          </a>
         </div>
       </div>
     </header>
@@ -146,6 +161,7 @@ const robotsMeta = noindex ? 'noindex,follow' : getRobotsMeta(tier);
             <li><a href="/image" class="text-sm text-text-muted hover:text-teal-400 transition-colors">Image Analyzer</a></li>
             <li><a href="/calculator" class="text-sm text-text-muted hover:text-teal-400 transition-colors">Calculator</a></li>
             <li><a href="/embed" class="text-sm text-text-muted hover:text-teal-400 transition-colors">Embed Widget</a></li>
+            <li><a href="/indian-exam-photo-size" class="text-sm text-text-muted hover:text-teal-400 transition-colors">🇮🇳 Indian Exam Photo</a></li>
           </ul>
         </div>
         <div>
@@ -192,5 +208,34 @@ const robotsMeta = noindex ? 'noindex,follow' : getRobotsMeta(tier);
       document.getElementById('mobile-menu')?.classList.toggle('hidden');
     });
   </script>
+
+  <style>
+    /* ── Indian Exams nav pill (desktop) ── */
+    .nav-indian-exam-link {
+      color: #fbbf24;                          /* amber-400 */
+      background: rgba(251, 191, 36, 0.08);
+      border: 1px solid rgba(251, 191, 36, 0.22);
+      position: relative;
+    }
+    .nav-indian-exam-link:hover {
+      color: #fcd34d;                          /* amber-300 */
+      background: rgba(251, 191, 36, 0.15);
+      border-color: rgba(251, 191, 36, 0.40);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(251, 191, 36, 0.18);
+    }
+
+    /* ── Indian Exams nav item (mobile) ── */
+    .mobile-indian-exam-link {
+      color: #fbbf24;
+      background: rgba(251, 191, 36, 0.07);
+      border: 1px solid rgba(251, 191, 36, 0.18);
+    }
+    .mobile-indian-exam-link:hover {
+      color: #fcd34d;
+      background: rgba(251, 191, 36, 0.14);
+      border-color: rgba(251, 191, 36, 0.35);
+    }
+  </style>
 </body>
 </html>
