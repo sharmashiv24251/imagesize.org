@@ -510,9 +510,9 @@ export default function ResizeIsland({
   return (
     <div class="w-full max-w-5xl mx-auto">
       {/* Controls */}
-      <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-4 flex-wrap">
+      <div class="flex flex-wrap items-start gap-3 mb-4">
         {/* Target Mode */}
-        <div class="flex items-center gap-1 p-1 bg-surface rounded-lg border border-border-dark/50">
+        <div class="flex items-center gap-1 p-1 bg-surface rounded-lg border border-border-dark/50 shrink-0">
           {(['ratio', 'exact', 'platform'] as TargetMode[]).map((m) => (
             <button
               key={m}
@@ -529,7 +529,7 @@ export default function ResizeIsland({
         </div>
 
         {/* Fit Mode */}
-        <div class="flex items-center gap-1 p-1 bg-surface rounded-lg border border-border-dark/50">
+        <div class="flex items-center gap-1 p-1 bg-surface rounded-lg border border-border-dark/50 shrink-0">
           {(['crop', 'fit', 'stretch'] as FitMode[])
             .filter((f) => !(targetMode === 'ratio' && f === 'stretch'))
             .map((f) => (
@@ -753,7 +753,7 @@ export default function ResizeIsland({
         <div class="lg:col-span-2">
           {!imageSrc ? (
             <div
-              class="border-2 border-dashed border-border-dark/50 rounded-xl p-16 text-center hover:border-teal-500/40 hover:bg-surface transition-all duration-200 cursor-pointer"
+              class="border-2 border-dashed border-border-dark/50 rounded-xl p-8 sm:p-16 text-center hover:border-teal-500/40 hover:bg-surface transition-all duration-200 cursor-pointer"
               onDragOver={(e) => e.preventDefault()}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}

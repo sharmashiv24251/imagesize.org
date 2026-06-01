@@ -258,7 +258,7 @@ export default function CalculatorIsland() {
   return (
     <div class="w-full max-w-4xl mx-auto">
       {/* Mode Selector */}
-      <div class="flex items-center gap-1 p-1 bg-surface rounded-lg border border-border-dark/50 mb-6 w-fit mx-auto">
+      <div class="flex items-center gap-1 p-1 bg-surface rounded-lg border border-border-dark/50 mb-6 w-full sm:w-fit sm:mx-auto overflow-x-auto">
         <button
           onClick={() => setMode('wh-to-ratio')}
           class={`px-4 py-2 text-sm rounded-md transition-all duration-150 ${
@@ -414,8 +414,8 @@ export default function CalculatorIsland() {
                 />
               </label>
             </div>
-            <div class="grid grid-cols-[1fr_auto_1fr] gap-2 items-center">
-              <div class="flex gap-2">
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <div class="flex gap-2 flex-1 min-w-0">
                 <input
                   type="number"
                   value={unitValue}
@@ -434,8 +434,8 @@ export default function CalculatorIsland() {
                   <option value="cm">cm</option>
                 </select>
               </div>
-              <span class="text-text-muted text-sm">→</span>
-              <div class="flex gap-2">
+              <span class="text-text-muted text-sm text-center">→</span>
+              <div class="flex gap-2 flex-1 min-w-0">
                 <div class="min-w-0 flex-1 px-3 py-2 bg-surface-2 border border-border-dark rounded-lg text-text-primary font-mono text-sm tabular-nums">
                   {Number.isFinite(converted) ? converted : 0}
                 </div>

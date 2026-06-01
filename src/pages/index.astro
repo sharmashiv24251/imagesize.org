@@ -130,9 +130,9 @@ const tools = [
       <a href="/crop-and-resize" class="text-sm text-teal-400 hover:text-teal-300">Open full crop and resize tool</a>
     </div>
 
-    <div class="bg-surface rounded-xl border border-border-dark/50 p-4 sm:p-5">
+    <div class="bg-surface rounded-xl border border-border-dark/50 p-4 sm:p-5 min-h-[320px] sm:min-h-[400px]">
       <ResizeIsland
-        client:load
+        client:visible
         initialPlatform="LinkedIn"
         initialFormat="Post Image"
         initialWidth={1200}
@@ -201,7 +201,7 @@ const tools = [
       <h2 class="text-2xl font-semibold text-text-primary">Aspect ratio helper</h2>
       <p class="text-sm text-text-muted mt-1">Still here when you need to calculate proportions, but image sizing comes first.</p>
     </div>
-    <CalculatorIsland client:load />
+    <CalculatorIsland client:visible />
   </section>
 
   <section class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
