@@ -148,7 +148,13 @@ export default function ResizeIsland({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
+  const cropPreviewRef = useRef<HTMLDivElement>(null);
   const platformCategories: CategoryFilter[] = ['all', 'social', 'video', 'professional', 'print', 'cinema', 'display-ads'];
+
+  // Crop drag state — offset in *source image* pixels (top-left of crop box)
+  const [cropX, setCropX] = useState(0);
+  const [cropY, setCropY] = useState(0);
+  const dragRef = useRef<{ startMouseX: number; startMouseY: number; startCropX: number; startCropY: number } | null>(null);
 
   const loadImageSrc = useCallback((src: string, name?: string) => {
     const img = new Image();
@@ -157,6 +163,9 @@ export default function ResizeIsland({
       setImgWidth(img.naturalWidth);
       setImgHeight(img.naturalHeight);
       setImageSrc(src);
+      // Reset crop offset to center whenever a new image is loaded
+      setCropX(0);
+      setCropY(0);
       if (name) setFileName(name);
     };
     img.src = src;
@@ -265,6 +274,54 @@ export default function ResizeIsland({
     if (file) loadImage(file);
   }, [loadImage]);
 
+  // ── Crop box helpers ───────────────────────────────────────────────────────
+  // Returns the crop rect in source-image pixel space, clamped to image bounds.
+  const getCropRect = useCallback((): { x: number; y: number; w: number; h: number } | null => {
+    if (!imgWidth || !imgHeight) return null;
+    const target = getEffectiveTarget();
+    const targetAR = target.w / target.h;
+    const imgAR = imgWidth / imgHeight;
+
+    let cropW: number, cropH: number;
+    if (imgAR > targetAR) {
+      // image wider than target → constrain by height
+      cropH = imgHeight;
+      cropW = Math.round(cropH * targetAR);
+    } else {
+      cropW = imgWidth;
+      cropH = Math.round(cropW / targetAR);
+    }
+
+    // Center default, then apply drag offset (cropX/Y are offsets from center position)
+    const centerX = Math.round((imgWidth - cropW) / 2);
+    const centerY = Math.round((imgHeight - cropH) / 2);
+    const x = Math.max(0, Math.min(centerX + cropX, imgWidth - cropW));
+    const y = Math.max(0, Math.min(centerY + cropY, imgHeight - cropH));
+    return { x, y, w: cropW, h: cropH };
+  }, [imgWidth, imgHeight, getEffectiveTarget, cropX, cropY]);
+
+  // Mouse/touch drag handlers for the crop overlay box
+  const handleCropDragStart = useCallback((clientX: number, clientY: number) => {
+    dragRef.current = { startMouseX: clientX, startMouseY: clientY, startCropX: cropX, startCropY: cropY };
+  }, [cropX, cropY]);
+
+  const handleCropDragMove = useCallback((clientX: number, clientY: number) => {
+    if (!dragRef.current || !cropPreviewRef.current || !imgWidth || !imgHeight) return;
+    const el = cropPreviewRef.current;
+    const rect = el.getBoundingClientRect();
+    // Scale: displayed size → source image pixels
+    const scaleX = imgWidth / rect.width;
+    const scaleY = imgHeight / rect.height;
+    const dx = (clientX - dragRef.current.startMouseX) * scaleX;
+    const dy = (clientY - dragRef.current.startMouseY) * scaleY;
+    setCropX(Math.round(dragRef.current.startCropX + dx));
+    setCropY(Math.round(dragRef.current.startCropY + dy));
+  }, [imgWidth, imgHeight]);
+
+  const handleCropDragEnd = useCallback(() => {
+    dragRef.current = null;
+  }, []);
+
   const drawBlurredBg = useCallback((
     ctx: CanvasRenderingContext2D, img: HTMLImageElement, cw: number, ch: number
   ) => {
@@ -310,10 +367,17 @@ export default function ResizeIsland({
     return { w: pad.totalW, h: pad.totalH };
   }, [imgWidth, imgHeight, getEffectiveTarget, fitMode]);
 
+  // Reset crop offset when target dimensions or fitMode change
+  useEffect(() => {
+    setCropX(0);
+    setCropY(0);
+  }, [exactW, exactH, ratioW, ratioH, selectedPlatform, fitMode]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     const img = imgRef.current;
     if (!canvas || !img || !imgWidth || !imgHeight) return;
+    if (fitMode === 'crop') return; // crop mode renders via overlay, not canvas
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
@@ -328,23 +392,7 @@ export default function ResizeIsland({
       return;
     }
 
-    if (fitMode === 'crop') {
-      const crop = calculateCrop(imgWidth, imgHeight, target.w, target.h);
-      if (target.isPixel) {
-        const scale = Math.min(maxPreview / target.w, maxPreview / target.h, 1);
-        canvas.width = Math.round(target.w * scale);
-        canvas.height = Math.round(target.h * scale);
-        ctx.drawImage(img, crop.x, crop.y, crop.width, crop.height, 0, 0, canvas.width, canvas.height);
-      } else {
-        const scale = Math.min(maxPreview / crop.width, maxPreview / crop.height, 1);
-        canvas.width = Math.round(crop.width * scale);
-        canvas.height = Math.round(crop.height * scale);
-        ctx.drawImage(img, crop.x, crop.y, crop.width, crop.height, 0, 0, canvas.width, canvas.height);
-      }
-      return;
-    }
-
-    // fit mode
+    // fit mode (crop is handled by overlay)
     if (target.isPixel) {
       const scale = Math.min(maxPreview / target.w, maxPreview / target.h, 1);
       canvas.width = Math.round(target.w * scale);
@@ -390,15 +438,17 @@ export default function ResizeIsland({
       exportCanvas.height = target.h;
       ctx.drawImage(img, 0, 0, imgWidth, imgHeight, 0, 0, target.w, target.h);
     } else if (fitMode === 'crop') {
-      const crop = calculateCrop(imgWidth, imgHeight, target.w, target.h);
-      if (target.isPixel) {
-        exportCanvas.width = target.w;
-        exportCanvas.height = target.h;
-        ctx.drawImage(img, crop.x, crop.y, crop.width, crop.height, 0, 0, target.w, target.h);
-      } else {
-        exportCanvas.width = crop.width;
-        exportCanvas.height = crop.height;
-        ctx.drawImage(img, crop.x, crop.y, crop.width, crop.height, 0, 0, crop.width, crop.height);
+      const rect = getCropRect();
+      if (rect) {
+        if (target.isPixel) {
+          exportCanvas.width = target.w;
+          exportCanvas.height = target.h;
+          ctx.drawImage(img, rect.x, rect.y, rect.w, rect.h, 0, 0, target.w, target.h);
+        } else {
+          exportCanvas.width = rect.w;
+          exportCanvas.height = rect.h;
+          ctx.drawImage(img, rect.x, rect.y, rect.w, rect.h, 0, 0, rect.w, rect.h);
+        }
       }
     } else {
       // fit
@@ -881,11 +931,79 @@ export default function ResizeIsland({
                 </div>
               </div>
               <div class="p-4 flex items-center justify-center bg-[#0a0a0a] min-h-[300px]">
-                <canvas
-                  ref={canvasRef}
-                  class="max-w-full max-h-[400px] rounded-sm"
-                  style="image-rendering: auto;"
-                />
+                {fitMode === 'crop' && imageSrc && getCropRect() ? (() => {
+                  const rect = getCropRect()!;
+                  // Compute crop box position as % of source image
+                  const boxLeft   = (rect.x / imgWidth)  * 100;
+                  const boxTop    = (rect.y / imgHeight) * 100;
+                  const boxWidth  = (rect.w / imgWidth)  * 100;
+                  const boxHeight = (rect.h / imgHeight) * 100;
+
+                  return (
+                    <div
+                      ref={cropPreviewRef}
+                      class="relative select-none"
+                      style={{ maxWidth: '100%', maxHeight: '400px', cursor: 'crosshair', touchAction: 'none' }}
+                      onMouseMove={(e) => handleCropDragMove(e.clientX, e.clientY)}
+                      onMouseUp={handleCropDragEnd}
+                      onMouseLeave={handleCropDragEnd}
+                      onTouchMove={(e) => { e.preventDefault(); handleCropDragMove(e.touches[0].clientX, e.touches[0].clientY); }}
+                      onTouchEnd={handleCropDragEnd}
+                    >
+                      {/* Source image */}
+                      <img
+                        src={imageSrc}
+                        alt="source"
+                        class="block max-w-full max-h-[400px] rounded-sm"
+                        style={{ userSelect: 'none', pointerEvents: 'none' }}
+                        draggable={false}
+                      />
+                      {/* Dark overlay outside crop box */}
+                      <div class="absolute inset-0 rounded-sm" style={{ pointerEvents: 'none' }}>
+                        {/* top */}
+                        <div class="absolute bg-black/55" style={{ top: 0, left: 0, right: 0, height: `${boxTop}%` }} />
+                        {/* bottom */}
+                        <div class="absolute bg-black/55" style={{ top: `${boxTop + boxHeight}%`, left: 0, right: 0, bottom: 0 }} />
+                        {/* left */}
+                        <div class="absolute bg-black/55" style={{ top: `${boxTop}%`, left: 0, width: `${boxLeft}%`, height: `${boxHeight}%` }} />
+                        {/* right */}
+                        <div class="absolute bg-black/55" style={{ top: `${boxTop}%`, left: `${boxLeft + boxWidth}%`, right: 0, height: `${boxHeight}%` }} />
+                      </div>
+                      {/* Crop selection box — drag handle */}
+                      <div
+                        class="absolute border-2 border-teal-400 rounded-sm"
+                        style={{
+                          left: `${boxLeft}%`,
+                          top: `${boxTop}%`,
+                          width: `${boxWidth}%`,
+                          height: `${boxHeight}%`,
+                          cursor: 'move',
+                          boxShadow: '0 0 0 1px rgba(45,212,191,0.3)',
+                        }}
+                        onMouseDown={(e) => { e.stopPropagation(); handleCropDragStart(e.clientX, e.clientY); }}
+                        onTouchStart={(e) => { e.stopPropagation(); handleCropDragStart(e.touches[0].clientX, e.touches[0].clientY); }}
+                      >
+                        {/* Corner handles */}
+                        {[['0%','0%'],['100%','0%'],['0%','100%'],['100%','100%']].map(([l, t]) => (
+                          <div key={`${l}${t}`} class="absolute w-2.5 h-2.5 bg-teal-400 rounded-sm"
+                            style={{ left: l, top: t, transform: 'translate(-50%,-50%)' }} />
+                        ))}
+                        {/* Centre label */}
+                        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                          <span class="text-[10px] text-white/70 bg-black/40 px-1.5 py-0.5 rounded select-none">
+                            drag to reposition
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })() : (
+                  <canvas
+                    ref={canvasRef}
+                    class="max-w-full max-h-[400px] rounded-sm"
+                    style="image-rendering: auto;"
+                  />
+                )}
               </div>
             </div>
           )}
