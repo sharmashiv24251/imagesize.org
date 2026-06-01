@@ -71,7 +71,7 @@ const keywords = [
   `${displaySize}`,
   `${format.ratio} aspect ratio`,
 ].join(', ');
-const canonicalUrl = absoluteUrl(`/${isAlias ? slug : canonicalSlug}`);
+const canonicalUrl = absoluteUrl(`/${canonicalSlug}`);
 const pageLabel = intentPage?.h1 || `${format.platform} ${format.name} Size`;
 const pageIntro = intentPage?.intro || `Use <strong class="text-text-primary">${displaySize} px</strong> for ${format.platform} ${format.name}. The target ratio is <strong class="text-text-primary font-mono">${format.ratio}</strong>. Upload your image below to crop, fit, resize, and export it for this exact format.`;
 

@@ -92,6 +92,13 @@ function getFormatAliases(format: PlatformFormat): string[] {
     aliases.add('instagram-story-size');
   }
 
+  // tiktok-ad-size resolves to the TikTok Video page (identical 1080×1920 dimensions)
+  if (format.platform === 'TikTok' && format.name === 'Video') {
+    aliases.add('tiktok-ad-size');
+    aliases.add('tiktok-ad-resolution');
+    aliases.add('tiktok-ad-dimensions');
+  }
+
   if (format.platform === 'Twitter/X' && format.name === 'Post Image') {
     aliases.add('twitter-post-image-size');
     aliases.add('x-post-image-size');
@@ -176,7 +183,7 @@ export const platformFormats: PlatformFormat[] = [
   { platform: 'TikTok', name: 'Profile Photo', w: 200, h: 200, ratio: '1:1', category: 'video' },
   { platform: 'TikTok', name: 'Horizontal Video', w: 1920, h: 1080, ratio: '16:9', category: 'video' },
   { platform: 'TikTok', name: 'Square Video', w: 1080, h: 1080, ratio: '1:1', category: 'video' },
-  { platform: 'TikTok', name: 'Ad', w: 1080, h: 1920, ratio: '9:16', category: 'video' },
+  // TikTok Ad is 1080×1920 (identical to TikTok Video) — handled as an alias of tiktok-video-size
   { platform: 'Pinterest', name: 'Standard Pin', w: 1000, h: 1500, ratio: '2:3', category: 'social' },
   { platform: 'Pinterest', name: 'Square Pin', w: 1000, h: 1000, ratio: '1:1', category: 'social' },
   { platform: 'Pinterest', name: 'Long / Infographic Pin', w: 1000, h: 2100, ratio: '1:2.1', category: 'social' },
